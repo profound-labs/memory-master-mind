@@ -3,8 +3,7 @@
 from pathlib import Path
 import sqlite3
 import contextlib
-
-DB_PATH = Path("./appdata.sqlite")
+from mmm import DB_PATH
 
 def create_challenge_settings_table() -> None:
     query = """

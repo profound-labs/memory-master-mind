@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mmm"
 version = "0.1.0"
-description = ""
+description = "Memory Master Machine - memory training in the terminal"
 authors = ["Gambhiro <profound.labs@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -10,6 +10,8 @@ readme = "README.md"
 python = "^3.8"
 textual = "^0.1.18"
 typer = "^0.6.1"
+appdirs = "^1.4.4"
+python-dotenv = "^0.21.0"
 
 [tool.poetry.scripts]
 mmm = 'mmm.runner:main'

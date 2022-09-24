@@ -1,3 +1,3 @@
-# MMM - Memory Master Machine
+# MMM - Memory Master Mind
 
 Memory training in the terminal

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mmm"
 version = "0.1.0"
-description = "Memory Master Machine - memory training in the terminal"
+description = "Memory Master Mind - memory training in the terminal"
 authors = ["Gambhiro <profound.labs@gmail.com>"]
 license = "MIT"
 readme = "README.md"

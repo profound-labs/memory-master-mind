@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
 import sqlite3
 import contextlib
 from mmm import DB_PATH
@@ -20,7 +19,7 @@ def create_challenge_settings_table() -> None:
             cursor.execute(query)
             connection.commit()
 
-def add_settings(challenge: str, settings_json: str) -> bool:
+def save_settings(challenge: str, settings_json: str) -> bool:
     if get_settings(challenge):
         query = """
             UPDATE challenge_settings

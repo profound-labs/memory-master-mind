@@ -51,7 +51,7 @@ class PreferencesView(PreferencesInterface):
     def save_settings(self):
         d = load_settings(self.view_id)
 
-        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level']:
+        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             d[k] = int(self.inputs[k].content)
 
         if self.inputs['zero_padded'].content == "True":
@@ -68,9 +68,10 @@ class PreferencesView(PreferencesInterface):
         self.labels['digits_max'] = FormLabel(label="Digits max:")
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
+        self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
         self.labels['zero_padded'] = FormLabel(label="Zero padded:")
 
-        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level']:
+        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             self.inputs[k] = InputText(
                 label=k,
                 content=str(d[k]),

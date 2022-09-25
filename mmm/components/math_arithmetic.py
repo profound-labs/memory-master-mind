@@ -81,7 +81,7 @@ class PreferencesView(PreferencesInterface):
     def save_settings(self):
         d = load_settings(self.view_id)
 
-        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'solve_frac_dec']:
+        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level', 'solve_frac_dec']:
             d[k] = int(self.inputs[k].content)
 
         s = self.inputs['operations'].content
@@ -105,11 +105,12 @@ class PreferencesView(PreferencesInterface):
         self.labels['digits_max'] = FormLabel(label="Digits max:")
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
+        self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
         self.labels['operations'] = FormLabel(label="Operations (+ - / *):")
         self.labels['negatives'] = FormLabel(label="Negatives:")
         self.labels['solve_frac_dec'] = FormLabel(label="Solve fractions to decimals:")
 
-        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level']:
+        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             self.inputs[k] = InputText(
                 label=k,
                 content=str(d[k]),

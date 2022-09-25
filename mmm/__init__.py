@@ -8,6 +8,12 @@ import appdirs
 
 load_dotenv()
 
+s = os.getenv('DEV')
+if s is not None and s == "True":
+    IS_DEV = True
+else:
+    IS_DEV = False
+
 MMM_PACKAGE_DIR = Path(os.path.dirname(__file__)).absolute()
 
 s = os.getenv('MMM_DIR')

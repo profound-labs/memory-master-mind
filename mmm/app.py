@@ -6,11 +6,12 @@ from typing import Optional, TypedDict
 from textual.app import App
 from textual.widgets import Button, ButtonPressed
 from textual.views._grid_view import GridView
-from mmm.components.challenge_interface import ChallengeInterface
 
 import mmm.db as db
+from mmm import IS_DEV
 from mmm.components.home import HomeView
 
+from mmm.components.challenge_interface import ChallengeInterface
 from mmm.components.static_number_sequence import StaticNumSeqView
 from mmm.components.math_arithmetic import MathArithmeticView
 
@@ -101,4 +102,7 @@ class MmmApp(App):
 
 def start():
     db.db_init()
-    MmmApp.run(title="MMM")
+    if IS_DEV:
+        MmmApp.run(title="MMM", log="textual.log")
+    else:
+        MmmApp.run(title="MMM")

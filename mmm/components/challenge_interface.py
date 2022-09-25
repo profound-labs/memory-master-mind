@@ -168,10 +168,12 @@ class ChallengeInterface(GridView):
         self.current_level = s["level"]
         self.footer.level = self.current_level
         self.first_try = True
-        self.show_numbers.new_challenge()
 
-        self.input_answer.content = ""
+        self.show_numbers.new_challenge()
         self.show_numbers.show_numbers = True
+
+        self.input_answer.new_challenge()
+
         self.footer.show_answer = False
         self.upd_state(State.SHOW_CHALLENGE)
 
@@ -213,6 +215,7 @@ class ChallengeInterface(GridView):
             self.incr_level()
             self.show_numbers.show_numbers = True
             self.footer.show_answer = False
+            self.input_answer.end_challenge()
 
         self.upd_state(self.state)
 
@@ -230,3 +233,4 @@ class ChallengeInterface(GridView):
         self.grid.add_widget(self.input_answer)
         self.grid.add_widget(self.footer)
 
+        self.new_challenge()

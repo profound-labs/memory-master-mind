@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import time
 
 from rich.align import Align
 from rich.console import RenderableType
@@ -18,10 +19,20 @@ class InputAnswer(Widget):
     content = Reactive("")
     state = Reactive(State.SHOW_CHALLENGE)
     instruction: str
+    time_challenge_started: float = 0.0
+    time_elapsed: float = 0.0
 
     def __init__(self, instruction: str):
         super().__init__()
         self.instruction = instruction
+
+    def new_challenge(self):
+        self.content = ""
+        self.time_challenge_started = time.time()
+
+    def end_challenge(self):
+        t = time.time()
+        self.time_elapsed = t - self.time_challenge_started
 
     def on_key(self, event: events.Key) -> None:
         if self.state == State.CORRECT:
@@ -55,7 +66,7 @@ class InputAnswer(Widget):
             border_style = Style(color="yellow")
 
         elif self.state == State.CORRECT:
-            title = "Correct!"
+            title = f"Correct! Solved in {self.time_elapsed:.1f}s"
             style = "bold white on rgb(50,57,50)"
             border_style = Style(color="green")
 

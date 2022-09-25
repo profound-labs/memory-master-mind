@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-# TODO measure and show solution time
 # TODO timer until challenge is shown
+# - block keys? wait for app to allow typing
+# - have timer? show time and bar in show_number
+# - timer ends: state to started typing
 
 import json
 from typing import Optional, TypedDict
@@ -104,4 +106,4 @@ class MmmApp(App):
 
 def start():
     db.db_init()
-    MmmApp.run(title="MMM", log="textual.log")
+    MmmApp.run(title="MMM")

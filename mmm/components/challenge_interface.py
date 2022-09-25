@@ -7,7 +7,7 @@
 # - Show correct answer: decrease level.
 # - New challenge without correct answer: decrease level.
 
-from typing import List, TypedDict
+from typing import Callable, List, Optional, TypedDict
 import json
 
 from rich.align import Align
@@ -29,6 +29,7 @@ class Settings(TypedDict):
     digits_min: int
     digits_max: int
     ch_per_level: int
+    seconds_per_level: int
     level: int
     level_max: int
     zero_padded: bool
@@ -41,6 +42,7 @@ def default_settings() -> Settings:
         digits_min = 1,
         digits_max = 2,
         ch_per_level = 2,
+        seconds_per_level = 5,
         level = 2,
         level_max = 999,
         zero_padded = False,
@@ -60,6 +62,53 @@ def load_settings(view_id: str) -> Settings:
         db.save_settings(view_id, s)
         return d
 
+class ChallengeTimer(Widget):
+    seconds_remain = Reactive(0)
+    timer_count: int = 0
+    current_timer_name: Optional[str] = None
+    callback: Optional[Callable] = None
+
+    def __init__(self):
+        super().__init__()
+        def noop():
+            pass
+        self.timers = dict()
+        self.timer_count += 1
+        k = str(self.timer_count)
+        self.current_timer_name = k
+        self.set_timer(1, noop, name="x")
+
+    async def on_timer(self, event: events.Timer) -> None:
+        if self.current_timer_name is None:
+            return
+
+        k = self.current_timer_name
+        if event.timer.name == k:
+            if self.seconds_remain == 0:
+                if self.callback is not None:
+                    self.callback()
+            else:
+                self.seconds_remain -= 1
+                self.set_timer(delay=1, name=k)
+
+    def start_timer(self, secs: int, callback: Callable):
+        self.timer_count += 1
+        k = str(self.timer_count)
+        self.current_timer_name = k
+        self.set_timer(delay=1, name=k)
+        self.seconds_remain = secs
+        self.callback = callback
+
+    def stop_timer(self):
+        self.seconds_remain = 0
+        self.current_timer_name = None
+
+    def render(self):
+        if self.seconds_remain > 0:
+            text = f"{self.seconds_remain}s "
+        else:
+            text = ""
+        return Align.right(Text(text), vertical="middle", height=1)
 
 class ShowChallengeInterface(Widget):
     state = Reactive(State.SHOW_CHALLENGE)
@@ -102,6 +151,7 @@ class ChallengeInterface(GridView):
     state: State = State.SHOW_CHALLENGE
     app_settings: Settings
     show_numbers: ShowChallengeInterface
+    challenge_timer: ChallengeTimer
     input_answer: InputAnswer
     header: Header
     footer: Footer
@@ -121,10 +171,12 @@ class ChallengeInterface(GridView):
 
         self.init_view_id()
 
-        s = load_settings(self.view_id)
-        self.current_level = s["level"]
+        d = load_settings(self.view_id)
+        self.current_level = d["level"]
         self.ch_per_current_level = 0
         self.first_try = True
+
+        self.challenge_timer = ChallengeTimer()
 
         self.init_components()
 
@@ -163,11 +215,21 @@ class ChallengeInterface(GridView):
         d['level'] = self.current_level - 1
         db.save_settings(self.view_id, json.dumps(d))
 
+    def do_started_answer(self):
+        self.show_numbers.show_numbers = False
+        self.footer.show_answer = True
+        self.upd_state(State.STARTED_ANSWER)
+
     def new_challenge(self):
-        s = load_settings(self.view_id)
-        self.current_level = s["level"]
+        d = load_settings(self.view_id)
+        self.current_level = d["level"]
         self.footer.level = self.current_level
         self.first_try = True
+
+        self.challenge_timer.stop_timer()
+        if d['seconds_per_level'] != 0:
+            secs = d['seconds_per_level'] * self.current_level
+            self.challenge_timer.start_timer(secs, self.do_started_answer)
 
         self.show_numbers.new_challenge()
         self.show_numbers.show_numbers = True
@@ -178,6 +240,9 @@ class ChallengeInterface(GridView):
         self.upd_state(State.SHOW_CHALLENGE)
 
     def on_key(self, event: events.Key) -> None:
+        if event.key in ["ctrl+i", "escape"]:
+            return
+
         # Key press after show answer.
         if self.state == State.SHOW_ANSWER:
             self.new_challenge()
@@ -191,11 +256,13 @@ class ChallengeInterface(GridView):
 
         if event.key == "s" and self.footer.show_answer:
             self.decr_level()
+            self.challenge_timer.stop_timer()
             self.show_numbers.show_numbers = True
             self.upd_state(State.SHOW_ANSWER)
             return
 
         if self.state in [State.SHOW_CHALLENGE, State.WRONG]:
+            self.challenge_timer.stop_timer()
             self.state = State.STARTED_ANSWER
             self.footer.show_answer = True
 
@@ -226,10 +293,12 @@ class ChallengeInterface(GridView):
         self.grid.set_gap(0, 0)
         self.grid.add_column("column")
         self.grid.add_row("row1")
-        self.grid.add_row("row2")
-        self.grid.add_row("row3", size=1)
+        self.grid.add_row("row2", size=1)
+        self.grid.add_row("row3")
+        self.grid.add_row("row4", size=1)
 
         self.grid.add_widget(self.show_numbers)
+        self.grid.add_widget(self.challenge_timer)
         self.grid.add_widget(self.input_answer)
         self.grid.add_widget(self.footer)
 

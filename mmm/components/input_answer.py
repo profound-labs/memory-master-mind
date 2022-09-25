@@ -38,7 +38,7 @@ class InputAnswer(Widget):
         if self.state == State.CORRECT:
             return
 
-        if event.key in ["h", "q", "p"]:
+        if event.key in ["h", "q", "p", "ctrl+i", "escape"]:
             return
 
         if event.key == "ctrl+h":

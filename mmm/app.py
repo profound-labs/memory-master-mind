@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO timer until challenge is shown
-# - block keys? wait for app to allow typing
-# - have timer? show time and bar in show_number
-# - timer ends: state to started typing
-
 import json
 from typing import Optional, TypedDict
 

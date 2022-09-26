@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Math (Arithmetic)
+# Timed Number Sequence
 
 import re
 import math
@@ -15,7 +15,7 @@ from mmm.components.challenge_interface import ChallengeInterface, ShowChallenge
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 
-VIEW_ID = "Math (Arithmetic)"
+VIEW_ID = "Timed Number Sequence"
 
 class ShowNumbers(ShowChallengeInterface):
     def new_challenge(self):
@@ -26,76 +26,39 @@ class ShowNumbers(ShowChallengeInterface):
             range_to = int(math.pow(10, d['digits_max'])) - 1
 
             n = randint(range_from, range_to)
-
-            if d['negatives']:
-                if randint(1, 100) % 2 == 1:
-                    n *= -1
-
-            a.append(str(n))
-
-            x = len(d['operations']) - 1
-            op = d['operations'][randint(0, x)]
-
-            a.append(op)
-
-        if d['level'] == 1:
-            a.append("1")
-        else:
-            a.pop()
-
+            if d['zero_padded']:
+                a.append(str(n).rjust(d['digits_max'], '0'))
+            else:
+                a.append(str(n))
         self.items = a
 
+        self.current_item = 0
+
     def format_challenge(self) -> str:
-        text = " ".join(self.items)
+        text = self.items[self.current_item]
         if not self.show_numbers:
             text = re.sub('.', '-', text)
 
         return text
 
-    def format_answer(self, for_display: bool) -> str:
-        d = load_settings(self.view_id)
-        answer = self.generate_answer()
-        answer = re.sub(r'\.0$', '', answer)
-
-        if answer.find('.') != -1:
-            digits = re.compile('(\\.[0-9]{1,' + str(d['solve_frac_dec']) + '}).*')
-            s = re.sub(digits, '\\1', answer)
-            if for_display and len(s) < len(answer):
-                s = "~" + s
-            answer = s
-
-        if for_display:
-            answer = self.format_challenge() + "\n= " + answer
-
-        return answer
+    def format_answer(self, _: bool) -> str:
+        return " ".join(self.items)
 
     def generate_answer(self) -> str:
-        if len(self.items) > 0:
-            expr = " ".join(self.items)
-            answer = str(eval(expr, {'__builtins__':None}))
-            return answer
-        else:
-            return ""
+        return " ".join(self.items)
 
 
 class PreferencesView(PreferencesInterface):
     def save_settings(self):
         d = load_settings(self.view_id)
 
-        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level', 'solve_frac_dec']:
+        for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             d[k] = int(self.inputs[k].content)
 
-        s = self.inputs['operations'].content
-        s = re.sub(r'([^ ])', '\\1 ', s).strip()
-        s = re.sub(r'  +', ' ', s)
-        ops = s.split(' ')
-
-        d['operations'] = ops
-
-        if self.inputs['negatives'].content == "True":
-            d['negatives'] = True
+        if self.inputs['zero_padded'].content == "True":
+            d['zero_padded'] = True
         else:
-            d['negatives'] = False
+            d['zero_padded'] = False
 
         db.save_settings(self.view_id, json.dumps(d))
 
@@ -107,9 +70,7 @@ class PreferencesView(PreferencesInterface):
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
         self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
-        self.labels['operations'] = FormLabel(label="Operations (+ - / *):")
-        self.labels['negatives'] = FormLabel(label="Negatives:")
-        self.labels['solve_frac_dec'] = FormLabel(label="Solve fractions to decimals:")
+        self.labels['zero_padded'] = FormLabel(label="Zero padded:")
 
         for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             self.inputs[k] = InputText(
@@ -119,24 +80,10 @@ class PreferencesView(PreferencesInterface):
                 input_height=1,
             )
 
-        self.inputs['operations'] = InputText(
-            label='operations',
-            content=" ".join(d['operations']),
-            allow_regex=r'[\+\-\*/ ]',
-            input_height=1,
-        )
-
-        self.inputs['negatives'] = InputText(
-            label='negatives',
-            content=str(d['negatives']),
+        self.inputs['zero_padded'] = InputText(
+            label='zero_padded',
+            content=str(d['zero_padded']),
             is_bool=True,
-            input_height=1,
-        )
-
-        self.inputs['solve_frac_dec'] = InputText(
-            label='solve_frac_dec',
-            content=str(d['solve_frac_dec']),
-            allow_regex=r'[0-9]',
             input_height=1,
         )
 
@@ -146,7 +93,7 @@ class PreferencesView(PreferencesInterface):
             self.grid.add_widget(self.inputs[k])
 
 
-class MathArithmeticView(ChallengeInterface):
+class TimedNumSeqView(ChallengeInterface):
     def init_view_id(self):
         self.view_id = VIEW_ID
 
@@ -159,9 +106,29 @@ class MathArithmeticView(ChallengeInterface):
         self.show_numbers = ShowNumbers(self.view_id)
         self.input_answer = InputAnswer(self.get_instruction())
 
+        self.show_challenge_blocks_keys = True
+        self.input_answer.show_challenge_blocks_keys = True
+
     def get_instruction(self) -> str:
-        return "Calculate the expression, then type the result."
+        return "The numbers will appear one by one. Memorize, then type them."
 
     def get_preferences_view(self):
         self.preferences_view = PreferencesView(self.view_id)
         return self.preferences_view
+
+    def show_next_per_secs(self):
+        d = load_settings(self.view_id)
+        secs = d['seconds_per_level']
+
+        if (self.challenge_timer.seconds_remain - 1) % secs == 0:
+            self.show_numbers.show_next_item()
+
+    def start_timer(self, seconds_per_level: int):
+        self.challenge_timer.stop_timer()
+        if seconds_per_level != 0:
+            secs = seconds_per_level * self.current_level
+            self.challenge_timer.start_timer(
+                secs=secs,
+                final_cb=self.do_started_answer,
+                tick_cb=self.show_next_per_secs,
+            )

@@ -21,6 +21,7 @@ class InputAnswer(Widget):
     instruction: str
     time_challenge_started: float = 0.0
     time_elapsed: float = 0.0
+    show_challenge_blocks_keys: bool = False
 
     def __init__(self, instruction: str):
         super().__init__()
@@ -39,6 +40,9 @@ class InputAnswer(Widget):
             return
 
         if event.key in ["h", "q", "p", "ctrl+i", "escape"]:
+            return
+
+        if self.state is State.SHOW_CHALLENGE and self.show_challenge_blocks_keys:
             return
 
         if event.key == "ctrl+h":

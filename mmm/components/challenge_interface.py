@@ -66,7 +66,8 @@ class ChallengeTimer(Widget):
     seconds_remain = Reactive(0)
     timer_count: int = 0
     current_timer_name: Optional[str] = None
-    callback: Optional[Callable] = None
+    tick_cb: Optional[Callable] = None
+    final_cb: Optional[Callable] = None
 
     def __init__(self):
         super().__init__()
@@ -84,20 +85,28 @@ class ChallengeTimer(Widget):
 
         k = self.current_timer_name
         if event.timer.name == k:
-            if self.seconds_remain == 0:
-                if self.callback is not None:
-                    self.callback()
+            if self.tick_cb is not None:
+                self.tick_cb()
+
+            if self.seconds_remain - 1 <= 0:
+                self.seconds_remain = 0
+                if self.final_cb is not None:
+                    self.final_cb()
             else:
                 self.seconds_remain -= 1
                 self.set_timer(delay=1, name=k)
 
-    def start_timer(self, secs: int, callback: Callable):
+    def start_timer(self,
+                    secs: int,
+                    final_cb: Callable,
+                    tick_cb: Optional[Callable] = None):
         self.timer_count += 1
         k = str(self.timer_count)
         self.current_timer_name = k
         self.set_timer(delay=1, name=k)
         self.seconds_remain = secs
-        self.callback = callback
+        self.final_cb = final_cb
+        self.tick_cb = tick_cb
 
     def stop_timer(self):
         self.seconds_remain = 0
@@ -115,6 +124,7 @@ class ShowChallengeInterface(Widget):
     view_id: str
     items = Reactive([])
     show_numbers = Reactive(True)
+    current_item = Reactive(0)
 
     def __init__(self, view_id: str):
         super().__init__()
@@ -129,20 +139,29 @@ class ShowChallengeInterface(Widget):
     def generate_answer(self) -> str:
         raise NotImplementedError
 
-    def format_answer(self, answer: str, for_display: bool) -> str:
+    def format_answer(self, for_display: bool) -> str:
+        text = self.format_challenge()
+        answer = self.generate_answer()
+        if text == answer:
+            return answer
+
         if for_display:
-            return "\n= " + answer
+            return text + "\n= " + answer
         else:
             return answer
+
+    def show_next_item(self):
+        if self.current_item < len(self.items) - 1:
+            self.current_item += 1
 
     def on_mount(self):
         self.new_challenge()
 
     def render(self):
-        text = self.format_challenge()
-        answer = self.generate_answer()
-        if self.state in [State.SHOW_ANSWER, State.CORRECT] and text != answer:
-            text += self.format_answer(answer, True)
+        if self.state in [State.SHOW_ANSWER, State.CORRECT]:
+            text = self.format_answer(True)
+        else:
+            text = self.format_challenge()
         return Align.center(Text(text), vertical="middle")
 
 
@@ -159,6 +178,7 @@ class ChallengeInterface(GridView):
     current_level: int
     ch_per_current_level: int
     first_try: bool
+    show_challenge_blocks_keys: bool = False
 
     def init_view_id(self):
         raise NotImplementedError
@@ -220,16 +240,22 @@ class ChallengeInterface(GridView):
         self.footer.show_answer = True
         self.upd_state(State.STARTED_ANSWER)
 
+    def start_timer(self, seconds_per_level: int):
+        self.challenge_timer.stop_timer()
+        if seconds_per_level != 0:
+            secs = seconds_per_level * self.current_level
+            self.challenge_timer.start_timer(
+                secs=secs,
+                final_cb=self.do_started_answer,
+            )
+
     def new_challenge(self):
         d = load_settings(self.view_id)
         self.current_level = d["level"]
         self.footer.level = self.current_level
         self.first_try = True
 
-        self.challenge_timer.stop_timer()
-        if d['seconds_per_level'] != 0:
-            secs = d['seconds_per_level'] * self.current_level
-            self.challenge_timer.start_timer(secs, self.do_started_answer)
+        self.start_timer(d['seconds_per_level'])
 
         self.show_numbers.new_challenge()
         self.show_numbers.show_numbers = True
@@ -261,6 +287,9 @@ class ChallengeInterface(GridView):
             self.upd_state(State.SHOW_ANSWER)
             return
 
+        if self.state is State.SHOW_CHALLENGE and self.show_challenge_blocks_keys:
+            return
+
         if self.state in [State.SHOW_CHALLENGE, State.WRONG]:
             self.challenge_timer.stop_timer()
             self.state = State.STARTED_ANSWER
@@ -270,8 +299,7 @@ class ChallengeInterface(GridView):
             self.show_numbers.show_numbers = False
 
             if event.key == "enter":
-                s = self.show_numbers.generate_answer()
-                answer = self.show_numbers.format_answer(s, False)
+                answer = self.show_numbers.format_answer(False)
                 self.state = self.input_answer.check_answer(answer)
 
         if self.state == State.WRONG:
@@ -292,9 +320,9 @@ class ChallengeInterface(GridView):
         self.grid.set_align("center", "center")
         self.grid.set_gap(0, 0)
         self.grid.add_column("column")
-        self.grid.add_row("row1")
+        self.grid.add_row("row1", fraction=2)
         self.grid.add_row("row2", size=1)
-        self.grid.add_row("row3")
+        self.grid.add_row("row3", fraction=1)
         self.grid.add_row("row4", size=1)
 
         self.grid.add_widget(self.show_numbers)

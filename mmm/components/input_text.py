@@ -49,7 +49,7 @@ class InputText(Widget):
         if not self.is_selected:
             return
 
-        if event.key in ["ctrl+i", "shift+tab", "enter", "up", "down"]:
+        if event.key in ["ctrl+i", "shift+tab", "enter", "up", "down", "j", "k"]:
             return
 
         if self.is_bool:

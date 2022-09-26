@@ -13,10 +13,12 @@ from mmm.components.home import HomeView
 
 from mmm.components.challenge_interface import ChallengeInterface
 from mmm.components.static_number_sequence import StaticNumSeqView
+from mmm.components.timed_number_sequence import TimedNumSeqView
 from mmm.components.math_arithmetic import MathArithmeticView
 
 from mmm.components.home import VIEW_ID as HomeId
 from mmm.components.static_number_sequence import VIEW_ID as StaticNumId
+from mmm.components.timed_number_sequence import VIEW_ID as TimedNumId
 from mmm.components.math_arithmetic import VIEW_ID as MathArithId
 
 VIEW_ID = "Memory Master Mind"
@@ -74,7 +76,7 @@ class MmmApp(App):
                 await self.current_challenge.focus_input()
             return
 
-        if name in [StaticNumId, MathArithId]:
+        if name in [StaticNumId, TimedNumId, MathArithId]:
             d = load_settings()
             d["last_challenge"] = name
             db.save_settings(VIEW_ID, json.dumps(d))
@@ -84,6 +86,10 @@ class MmmApp(App):
 
         elif name == StaticNumId:
             self.current_challenge = StaticNumSeqView()
+            await self.dock_view(self.current_challenge)
+
+        elif name == TimedNumId:
+            self.current_challenge = TimedNumSeqView()
             await self.dock_view(self.current_challenge)
 
         elif name == MathArithId:

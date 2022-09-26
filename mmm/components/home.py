@@ -9,6 +9,7 @@ from textual.views._grid_view import GridView
 from mmm.components.header import Header
 from mmm.components.form_button import FormButton
 from mmm.components.static_number_sequence import VIEW_ID as StaticNumId
+from mmm.components.timed_number_sequence import VIEW_ID as TimedNumId
 from mmm.components.math_arithmetic import VIEW_ID as MathArithId
 
 VIEW_ID = 'Home'
@@ -69,6 +70,7 @@ class HomeView(GridView):
     async def on_mount(self) -> None:
         labels = [
             StaticNumId,
+            TimedNumId,
             MathArithId,
         ]
 

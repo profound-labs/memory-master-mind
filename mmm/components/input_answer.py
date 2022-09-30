@@ -2,6 +2,7 @@
 
 import re
 import time
+from typing import List
 
 from rich.align import Align
 from rich.console import RenderableType
@@ -13,12 +14,13 @@ from textual import events
 from textual.reactive import Reactive
 from textual.widget import Widget
 
-from mmm.types import State
+from mmm.types import RE_PUNCT, State
 
 class InputAnswer(Widget):
     content = Reactive("")
     state = Reactive(State.SHOW_CHALLENGE)
     instruction: str
+    only_numbers: bool = True
     time_challenge_started: float = 0.0
     time_elapsed: float = 0.0
     show_challenge_blocks_keys: bool = False
@@ -39,8 +41,15 @@ class InputAnswer(Widget):
         if self.state == State.CORRECT:
             return
 
-        if event.key in ["h", "q", "p", "ctrl+i", "escape"]:
-            return
+        if self.only_numbers:
+            if event.key in ["h", "q", "p", "s", "enter", "escape"]:
+                return
+        else:
+            if self.app.menu_enabled == True: # type: ignore
+                if event.key in ["h", "q", "p", "s", "enter", "escape", "ctrl+i"]:
+                    return
+            elif event.key in ["escape", "ctrl+i"]:
+                return
 
         if self.state is State.SHOW_CHALLENGE and self.show_challenge_blocks_keys:
             return
@@ -48,11 +57,31 @@ class InputAnswer(Widget):
         if event.key == "ctrl+h":
             # ctrl+h is Backspace
             self.content = self.content[:-1]
-        elif re.search(r'[0-9\. -]', event.key):
+        elif self.only_numbers:
+            if re.search(r'[0-9\. -]', event.key):
+                    self.content += event.key
+        else:
+            if event.key == "enter":
+                self.content += "\n"
+            else:
                 self.content += event.key
 
-    def check_answer(self, correct_answer: str) -> State:
-        if self.content.strip() == correct_answer:
+    def check_answer(self, correct_answers: List[str]) -> State:
+        text = self.content.strip().lower()
+        text = re.sub(RE_PUNCT, '', text)
+        text = re.sub(r'  +', ' ', text)
+
+        ok = False
+        for i in correct_answers:
+            answer = i.strip().lower()
+            answer = re.sub(RE_PUNCT, '', answer)
+            answer = re.sub(r'  +', ' ', answer)
+
+            if text == answer:
+                ok = True
+                break
+
+        if ok:
             self.state = State.CORRECT
         else:
             self.state = State.WRONG

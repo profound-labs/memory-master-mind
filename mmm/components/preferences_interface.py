@@ -7,6 +7,7 @@ from textual.views._grid_view import GridView
 from textual.widgets import ButtonPressed
 
 from mmm.components.header import Header
+from mmm.components.footer import Footer
 from mmm.components.input_text import InputText
 from mmm.components.form_button import FormButton
 from mmm.components.form_label import FormLabel
@@ -29,10 +30,24 @@ class PreferencesInterface(GridView):
     def save_settings(self):
         raise NotImplementedError
 
+    def set_menu_enabled(self, x: bool):
+        self.app.menu_enabled = x # type: ignore
+        self.footer.menu_enabled = x
+
     async def highlight_selected(self):
-        if self.selected_idx is not None:
-            for idx, k in enumerate(self.inputs.keys()):
-                await self.inputs[k].set_selected(idx == self.selected_idx)
+        if self.selected_idx is None:
+            return
+
+        selected_key = ""
+        for idx, k in enumerate(self.inputs.keys()):
+            await self.inputs[k].set_selected(idx == self.selected_idx)
+            if idx == self.selected_idx:
+                selected_key = k
+
+        if selected_key != "" and self.inputs[selected_key].is_text:
+            self.set_menu_enabled(False)
+        else:
+            self.set_menu_enabled(True)
 
     async def select_next(self):
         if self.selected_idx is None:
@@ -87,6 +102,10 @@ class PreferencesInterface(GridView):
         self.grid.add_column("c1")
         self.grid.add_column("c2")
 
+        self.grid.add_row("spc0", size=1)
+        self.grid.add_areas(spc0="c1-start|c2-end,spc0")
+        self.grid.add_widget(Header(title=""), area="spc0")
+
         self.header = Header(title="Preferences: " + self.view_id)
 
         self.grid.add_row("r1", size=2)
@@ -97,7 +116,7 @@ class PreferencesInterface(GridView):
 
         self.setup_labels_inputs()
 
-        self.grid.add_row("spc", size=1)
+        self.grid.add_row("spc1", size=1)
         self.grid.add_row("btn", size=1)
 
         self.grid.add_areas(area2="c1,btn")
@@ -105,3 +124,16 @@ class PreferencesInterface(GridView):
 
         self.grid.add_widget(self.submit_btn, area="area2")
         self.grid.add_widget(self.cancel_btn, area="area3")
+
+        self.grid.add_row("spc2")
+
+        self.grid.add_row("footer", size=1)
+        self.grid.add_areas(footer="c1-start|c2-end,footer")
+
+        self.footer = Footer()
+        self.footer.preferences = False
+        self.footer.show_answer = False
+        self.footer.new_challenge = False
+        self.footer.show_level = False
+
+        self.grid.add_widget(self.footer, area="footer")

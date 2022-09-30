@@ -6,13 +6,9 @@ from textual import events
 from textual.widgets import ButtonPressed
 from textual.views._grid_view import GridView
 
+from mmm.types import StaticNumId, TimedNumId, MathArithId, QuotesId
 from mmm.components.header import Header
 from mmm.components.form_button import FormButton
-from mmm.components.static_number_sequence import VIEW_ID as StaticNumId
-from mmm.components.timed_number_sequence import VIEW_ID as TimedNumId
-from mmm.components.math_arithmetic import VIEW_ID as MathArithId
-
-VIEW_ID = 'Home'
 
 class HomeView(GridView):
     challenges: List[FormButton] = []
@@ -72,6 +68,7 @@ class HomeView(GridView):
             StaticNumId,
             TimedNumId,
             MathArithId,
+            QuotesId,
         ]
 
         self.grid.set_align("center", "center")

@@ -6,7 +6,9 @@ import re
 import math
 from random import randint
 import json
+from typing import List
 
+from mmm.types import MathArithId
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -15,10 +17,8 @@ from mmm.components.challenge_interface import ChallengeInterface, ShowChallenge
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 
-VIEW_ID = "Math (Arithmetic)"
-
 class ShowNumbers(ShowChallengeInterface):
-    def new_challenge(self):
+    def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
         a = []
         for _ in range(0, d['level']):
@@ -52,7 +52,7 @@ class ShowNumbers(ShowChallengeInterface):
 
         return text
 
-    def format_answer(self, for_display: bool) -> str:
+    def format_answers(self, for_display: bool) -> List[str]:
         d = load_settings(self.view_id)
         answer = self.generate_answer()
         answer = re.sub(r'\.0$', '', answer)
@@ -67,7 +67,7 @@ class ShowNumbers(ShowChallengeInterface):
         if for_display:
             answer = self.format_challenge() + "\n= " + answer
 
-        return answer
+        return [answer]
 
     def generate_answer(self) -> str:
         if len(self.items) > 0:
@@ -148,7 +148,7 @@ class PreferencesView(PreferencesInterface):
 
 class MathArithmeticView(ChallengeInterface):
     def init_view_id(self):
-        self.view_id = VIEW_ID
+        self.view_id = MathArithId
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

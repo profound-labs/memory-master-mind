@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+# TODO quotes: word max
+# if lvl < 5, new quote should be short
+# TODO help menus, working memory, memorization techniques
+# TODO text input: move cursor with arrow keys, home, end
+# - input_answer
+# - input_text
+
 import json
 from typing import Optional, TypedDict
 
@@ -15,13 +22,9 @@ from mmm.components.challenge_interface import ChallengeInterface
 from mmm.components.static_number_sequence import StaticNumSeqView
 from mmm.components.timed_number_sequence import TimedNumSeqView
 from mmm.components.math_arithmetic import MathArithmeticView
+from mmm.components.quotes import QuotesView
 
-from mmm.components.home import VIEW_ID as HomeId
-from mmm.components.static_number_sequence import VIEW_ID as StaticNumId
-from mmm.components.timed_number_sequence import VIEW_ID as TimedNumId
-from mmm.components.math_arithmetic import VIEW_ID as MathArithId
-
-VIEW_ID = "Memory Master Mind"
+from mmm.types import AppId, HomeId, StaticNumId, TimedNumId, MathArithId, QuotesId
 
 class Settings(TypedDict):
     last_challenge: str
@@ -33,36 +36,49 @@ def default_settings() -> Settings:
     )
 
 def load_settings() -> Settings:
-    res = db.get_settings(VIEW_ID)
+    res = db.get_settings(AppId)
     if res:
         d: Settings = json.loads(res[2])
         return d
     else:
         d = default_settings()
         s = json.dumps(d)
-        db.save_settings(VIEW_ID, s)
+        db.save_settings(AppId, s)
         return d
 
 class MmmApp(App):
     home: HomeView
     current_challenge: Optional[ChallengeInterface]
+    menu_enabled: bool = True
 
     async def on_load(self):
         await self.bind("h", "home", "Home")
-        await self.bind("q", "quit", "Quit")
+        await self.bind("q", "maybe_quit", "Quit")
         await self.bind("p", "preferences", "Preferences")
+
+    def toggle_menu(self):
+        self.menu_enabled = not self.menu_enabled
 
     async def dock_view(self, view: GridView):
         self.view.layout.docks.clear() # type: ignore
         self.view.widgets.clear()
         await self.view.dock(view, edge="top")
 
+    async def action_maybe_quit(self):
+        if not self.menu_enabled:
+            return
+        await self.action_quit()
+
     async def action_home(self):
+        if not self.menu_enabled:
+            return
         self.current_challenge = None
         await self.dock_view(self.home)
         await self.home.header.focus()
 
     async def action_preferences(self):
+        if not self.menu_enabled:
+            return
         if self.current_challenge is None:
             return
 
@@ -76,10 +92,10 @@ class MmmApp(App):
                 await self.current_challenge.focus_input()
             return
 
-        if name in [StaticNumId, TimedNumId, MathArithId]:
+        if name in [StaticNumId, TimedNumId, MathArithId, QuotesId]:
             d = load_settings()
             d["last_challenge"] = name
-            db.save_settings(VIEW_ID, json.dumps(d))
+            db.save_settings(AppId, json.dumps(d))
 
         if name == HomeId:
             await self.action_home()
@@ -94,6 +110,11 @@ class MmmApp(App):
 
         elif name == MathArithId:
             self.current_challenge = MathArithmeticView()
+            await self.dock_view(self.current_challenge)
+
+        elif name == QuotesId:
+            self.current_challenge = QuotesView()
+            self.current_challenge.is_text_challenge = True
             await self.dock_view(self.current_challenge)
 
     async def handle_button_pressed(self, message: ButtonPressed) -> None:

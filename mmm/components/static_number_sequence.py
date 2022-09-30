@@ -11,6 +11,7 @@ import math
 from random import randint
 import json
 
+from mmm.types import StaticNumId
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -19,10 +20,8 @@ from mmm.components.challenge_interface import ChallengeInterface, ShowChallenge
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 
-VIEW_ID = "Static Number Sequence"
-
 class ShowNumbers(ShowChallengeInterface):
-    def new_challenge(self):
+    def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
         a = []
         for _ in range(0, d['level']):
@@ -94,7 +93,7 @@ class PreferencesView(PreferencesInterface):
 
 class StaticNumSeqView(ChallengeInterface):
     def init_view_id(self):
-        self.view_id = VIEW_ID
+        self.view_id = StaticNumId
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

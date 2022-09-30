@@ -18,6 +18,7 @@ class InputText(Widget):
     content = Reactive("")
     is_selected = Reactive(False)
     is_bool = False
+    is_text = False
     allow_regex: Optional[str] = None
     input_height: int
 
@@ -25,12 +26,14 @@ class InputText(Widget):
                  label: str,
                  content: str = "",
                  is_bool: bool = False,
+                 is_text: bool = False,
                  allow_regex: Optional[str] = None,
                  input_height: int = 3):
         super().__init__()
         self.label = label
         self.content = content
         self.is_bool = is_bool
+        self.is_text = is_text
         self.allow_regex = allow_regex
         self.input_height = input_height
 

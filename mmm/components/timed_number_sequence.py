@@ -6,7 +6,9 @@ import re
 import math
 from random import randint
 import json
+from typing import List
 
+from mmm.types import TimedNumId
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -15,10 +17,8 @@ from mmm.components.challenge_interface import ChallengeInterface, ShowChallenge
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 
-VIEW_ID = "Timed Number Sequence"
-
 class ShowNumbers(ShowChallengeInterface):
-    def new_challenge(self):
+    def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
         a = []
         for _ in range(0, d['level']):
@@ -41,8 +41,9 @@ class ShowNumbers(ShowChallengeInterface):
 
         return text
 
-    def format_answer(self, _: bool) -> str:
-        return " ".join(self.items)
+    def format_answers(self, _: bool) -> List[str]:
+        a = " ".join(self.items)
+        return [a]
 
     def generate_answer(self) -> str:
         return " ".join(self.items)
@@ -95,7 +96,7 @@ class PreferencesView(PreferencesInterface):
 
 class TimedNumSeqView(ChallengeInterface):
     def init_view_id(self):
-        self.view_id = VIEW_ID
+        self.view_id = TimedNumId
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

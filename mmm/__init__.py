@@ -16,6 +16,8 @@ else:
 
 MMM_PACKAGE_DIR = Path(os.path.dirname(__file__)).absolute()
 
+PACKAGE_QUOTES_PATH = MMM_PACKAGE_DIR.joinpath("assets/quotes.csv")
+
 s = os.getenv('MMM_DIR')
 if s is not None and s != '':
     MMM_DIR = Path(s)

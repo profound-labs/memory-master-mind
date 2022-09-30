@@ -7,23 +7,23 @@
 # - Show correct answer: decrease level.
 # - New challenge without correct answer: decrease level.
 
-from typing import Callable, List, Optional, TypedDict
+from typing import List, Optional, Text, TypedDict
 import json
-
 from rich.align import Align
-from rich.text import Text
 
 from textual import events
-from textual.reactive import Reactive
-from textual.widget import Widget
 from textual.views._grid_view import GridView
+
+from mmm.components.challenge_timer import ChallengeTimer
 from mmm.components.footer import Footer
 from mmm.components.input_answer import InputAnswer
 from mmm.components.preferences_interface import PreferencesInterface
+from mmm.components.show_challenge_interface import ShowChallengeInterface
 
 import mmm.db as db
-from mmm.types import State
+from mmm.types import QuotesId, State
 from mmm.components.header import Header
+
 
 class Settings(TypedDict):
     digits_min: int
@@ -36,9 +36,13 @@ class Settings(TypedDict):
     operations: List[str]
     negatives: bool
     solve_frac_dec: int
+    words_max: int
+    quotes_path: str
+    last_quote_idx: int
 
-def default_settings() -> Settings:
-    return Settings(
+
+def default_settings(view_id: Optional[str] = None) -> Settings:
+    d = Settings(
         digits_min = 1,
         digits_max = 2,
         ch_per_level = 2,
@@ -49,7 +53,16 @@ def default_settings() -> Settings:
         operations = ["+", "-"],
         negatives = False,
         solve_frac_dec = 1,
+        words_max = 999,
+        quotes_path = "",
+        last_quote_idx = 0,
     )
+
+    if view_id is not None and view_id == QuotesId:
+        d['ch_per_level'] = 1
+        d['level_max'] = 10
+
+    return d
 
 def load_settings(view_id: str) -> Settings:
     res = db.get_settings(view_id)
@@ -57,112 +70,10 @@ def load_settings(view_id: str) -> Settings:
         d: Settings = json.loads(res[2])
         return d
     else:
-        d = default_settings()
+        d = default_settings(view_id)
         s = json.dumps(d)
         db.save_settings(view_id, s)
         return d
-
-class ChallengeTimer(Widget):
-    seconds_remain = Reactive(0)
-    timer_count: int = 0
-    current_timer_name: Optional[str] = None
-    tick_cb: Optional[Callable] = None
-    final_cb: Optional[Callable] = None
-
-    def __init__(self):
-        super().__init__()
-        def noop():
-            pass
-        self.timers = dict()
-        self.timer_count += 1
-        k = str(self.timer_count)
-        self.current_timer_name = k
-        self.set_timer(1, noop, name="x")
-
-    async def on_timer(self, event: events.Timer) -> None:
-        if self.current_timer_name is None:
-            return
-
-        k = self.current_timer_name
-        if event.timer.name == k:
-            if self.tick_cb is not None:
-                self.tick_cb()
-
-            if self.seconds_remain - 1 <= 0:
-                self.seconds_remain = 0
-                if self.final_cb is not None:
-                    self.final_cb()
-            else:
-                self.seconds_remain -= 1
-                self.set_timer(delay=1, name=k)
-
-    def start_timer(self,
-                    secs: int,
-                    final_cb: Callable,
-                    tick_cb: Optional[Callable] = None):
-        self.timer_count += 1
-        k = str(self.timer_count)
-        self.current_timer_name = k
-        self.set_timer(delay=1, name=k)
-        self.seconds_remain = secs
-        self.final_cb = final_cb
-        self.tick_cb = tick_cb
-
-    def stop_timer(self):
-        self.seconds_remain = 0
-        self.current_timer_name = None
-
-    def render(self):
-        if self.seconds_remain > 0:
-            text = f"{self.seconds_remain}s "
-        else:
-            text = ""
-        return Align.right(Text(text), vertical="middle", height=1)
-
-class ShowChallengeInterface(Widget):
-    state = Reactive(State.SHOW_CHALLENGE)
-    view_id: str
-    items = Reactive([])
-    show_numbers = Reactive(True)
-    current_item = Reactive(0)
-
-    def __init__(self, view_id: str):
-        super().__init__()
-        self.view_id = view_id
-
-    def new_challenge(self):
-        raise NotImplementedError
-
-    def format_challenge(self) -> str:
-        raise NotImplementedError
-
-    def generate_answer(self) -> str:
-        raise NotImplementedError
-
-    def format_answer(self, for_display: bool) -> str:
-        text = self.format_challenge()
-        answer = self.generate_answer()
-        if text == answer:
-            return answer
-
-        if for_display:
-            return text + "\n= " + answer
-        else:
-            return answer
-
-    def show_next_item(self):
-        if self.current_item < len(self.items) - 1:
-            self.current_item += 1
-
-    def on_mount(self):
-        self.new_challenge()
-
-    def render(self):
-        if self.state in [State.SHOW_ANSWER, State.CORRECT]:
-            text = self.format_answer(True)
-        else:
-            text = self.format_challenge()
-        return Align.center(Text(text), vertical="middle")
 
 
 class ChallengeInterface(GridView):
@@ -179,6 +90,7 @@ class ChallengeInterface(GridView):
     ch_per_current_level: int
     first_try: bool
     show_challenge_blocks_keys: bool = False
+    is_text_challenge: bool = False
 
     def init_view_id(self):
         raise NotImplementedError
@@ -236,6 +148,8 @@ class ChallengeInterface(GridView):
         db.save_settings(self.view_id, json.dumps(d))
 
     def do_started_answer(self):
+        if self.is_text_challenge:
+            self.set_menu_enabled(False)
         self.show_numbers.show_numbers = False
         self.footer.show_answer = True
         self.upd_state(State.STARTED_ANSWER)
@@ -249,42 +163,75 @@ class ChallengeInterface(GridView):
                 final_cb=self.do_started_answer,
             )
 
-    def new_challenge(self):
+    def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
         self.current_level = d["level"]
         self.footer.level = self.current_level
         self.first_try = True
 
-        self.start_timer(d['seconds_per_level'])
+        if self.view_id != QuotesId:
+            self.start_timer(d['seconds_per_level'])
 
-        self.show_numbers.new_challenge()
-        self.show_numbers.show_numbers = True
+        self.show_numbers.new_challenge(regenerate)
+
+        if self.view_id == QuotesId:
+            self.show_numbers.show_numbers = False
+        else:
+            self.show_numbers.show_numbers = True
 
         self.input_answer.new_challenge()
 
-        self.footer.show_answer = False
-        self.upd_state(State.SHOW_CHALLENGE)
+        if self.view_id == QuotesId:
+            self.footer.show_answer = True
+            self.set_menu_enabled(False)
+            self.upd_state(State.STARTED_ANSWER)
+        else:
+            self.footer.show_answer = False
+            self.set_menu_enabled(True)
+            self.upd_state(State.SHOW_CHALLENGE)
+
+    def toggle_menu(self):
+        self.app.toggle_menu() # type: ignore
+        self.footer.menu_enabled = self.app.menu_enabled # type: ignore
+
+    def menu_enabled(self) -> bool:
+        return self.app.menu_enabled # type: ignore
+
+    def set_menu_enabled(self, x: bool):
+        self.app.menu_enabled = x # type: ignore
+        self.footer.menu_enabled = x # type: ignore
 
     def on_key(self, event: events.Key) -> None:
-        if event.key in ["ctrl+i", "escape"]:
+        if event.key == "escape":
             return
 
-        # Key press after show answer.
-        if self.state == State.SHOW_ANSWER:
-            self.new_challenge()
+        if event.key == "ctrl+i":
+            if not self.input_answer.only_numbers:
+                self.toggle_menu()
             return
 
-        if event.key == "n":
+        if event.key == "r" and self.menu_enabled():
+            if self.state == State.STARTED_ANSWER:
+                self.decr_level()
+            self.new_challenge(regenerate=False)
+            return
+
+        if event.key == "n" and self.menu_enabled():
             if self.state == State.STARTED_ANSWER:
                 self.decr_level()
             self.new_challenge()
             return
 
-        if event.key == "s" and self.footer.show_answer:
+        if event.key == "s" and self.footer.show_answer and self.menu_enabled():
             self.decr_level()
             self.challenge_timer.stop_timer()
             self.show_numbers.show_numbers = True
             self.upd_state(State.SHOW_ANSWER)
+            return
+
+        # Key press after show answer.
+        if self.state == State.SHOW_ANSWER:
+            self.new_challenge()
             return
 
         if self.state is State.SHOW_CHALLENGE and self.show_challenge_blocks_keys:
@@ -298,13 +245,15 @@ class ChallengeInterface(GridView):
         if self.state in [State.STARTED_ANSWER, State.WRONG]:
             self.show_numbers.show_numbers = False
 
-            if event.key == "enter":
-                answer = self.show_numbers.format_answer(False)
-                self.state = self.input_answer.check_answer(answer)
+            if event.key == "enter" and self.menu_enabled():
+                answers = self.show_numbers.format_answers(False)
+                self.state = self.input_answer.check_answer(answers)
 
         if self.state == State.WRONG:
             self.decr_level()
             self.first_try = False
+            if not self.input_answer.only_numbers:
+                self.set_menu_enabled(False)
 
         if self.state == State.CORRECT:
             self.incr_level()
@@ -319,15 +268,23 @@ class ChallengeInterface(GridView):
 
         self.grid.set_align("center", "center")
         self.grid.set_gap(0, 0)
-        self.grid.add_column("column")
-        self.grid.add_row("row1", fraction=2)
-        self.grid.add_row("row2", size=1)
-        self.grid.add_row("row3", fraction=1)
-        self.grid.add_row("row4", size=1)
+        self.grid.add_column("col")
+        self.grid.add_row("r1", fraction=2)
+        self.grid.add_row("r2", size=1)
+        self.grid.add_row("r3", fraction=1)
+        self.grid.add_row("r4", size=1)
 
-        self.grid.add_widget(self.show_numbers)
-        self.grid.add_widget(self.challenge_timer)
-        self.grid.add_widget(self.input_answer)
-        self.grid.add_widget(self.footer)
+        self.grid.add_areas(show="col,r1")
+        self.grid.add_areas(timer="col,r2")
+        self.grid.add_areas(answer="col,r3")
+        self.grid.add_areas(footer="col,r4")
+
+        self.grid.add_widget(self.show_numbers, area="show")
+
+        if self.view_id != QuotesId:
+            self.grid.add_widget(self.challenge_timer, area="timer")
+
+        self.grid.add_widget(self.input_answer, area="answer")
+        self.grid.add_widget(self.footer, area="footer")
 
         self.new_challenge()

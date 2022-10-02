@@ -5,11 +5,10 @@
 from pathlib import Path
 import re
 import math
-from random import randint, randrange
+from random import randrange
 import json
 import csv
-from typing import List, Optional
-from typing_extensions import is_typeddict
+from typing import List, Optional, Tuple
 
 from mmm import PACKAGE_QUOTES_PATH
 from mmm.types import QuotesId, RE_PUNCT
@@ -44,9 +43,7 @@ class ShowQuote(ShowChallengeInterface):
     current_quote_idx: Optional[int] = None
     next_quote_idx: Optional[int] = None
 
-    def quote_to_body_and_author(self) -> List[str]:
-        quote = self.items[0]
-
+    def quote_to_body_and_author(self, quote: str) -> List[str]:
         re_author = re.compile(r'(\([^\)]+\))$')
         m = re.search(re_author, quote)
         if m is not None:
@@ -63,8 +60,8 @@ class ShowQuote(ShowChallengeInterface):
 
         return [body, author]
 
-    def quote_body_split(self) -> List[str]:
-        (body, _) = self.quote_to_body_and_author()
+    def quote_body_split(self, quote: str) -> List[str]:
+        (body, _) = self.quote_to_body_and_author(quote)
 
         a = []
         for line in body.split("\n"):
@@ -79,16 +76,43 @@ class ShowQuote(ShowChallengeInterface):
         quote = re.sub(r'\n +', '\n', quote)
         return quote.strip()
 
+    def quotes_words_max(self, words_max: int) -> List[str]:
+        def quote_select(x: str) -> bool:
+            n = len(self.quote_body_split(x))
+            return (n <= words_max)
+
+        ret = list(filter(quote_select, QUOTES))
+
+        return ret
+
+    def get_new_quote(self, quotes: List[str]) -> Tuple[int, str]:
+        idx = randrange(0, len(quotes))
+        if len(quotes) > 1:
+            while idx == self.current_quote_idx:
+                idx = randrange(0, len(quotes))
+
+        quote = quotes[idx]
+
+        return (idx, quote)
+
     def new_challenge(self, regenerate: bool = True):
-        if self.next_quote_idx is not None and self.next_quote_idx < len(QUOTES):
-            quote = QUOTES[self.next_quote_idx]
+        d = load_settings(self.view_id)
+        level = d['level']
+        words_max = d['words_max']
+
+        if level <= 2 and words_max > 20:
+            words_max = 20
+
+        quotes = self.quotes_words_max(words_max)
+
+        if self.next_quote_idx is not None and self.next_quote_idx < len(quotes):
+            quote = quotes[self.next_quote_idx]
             self.current_quote_idx = self.next_quote_idx
             self.next_quote_idx = None
             self.items = [quote]
         elif regenerate:
-            n = randint(0, len(QUOTES)-1)
-            quote = QUOTES[n]
-            self.current_quote_idx = n
+            idx, quote = self.get_new_quote(quotes)
+            self.current_quote_idx = idx
             self.items = [quote]
         else:
             quote = self.items[0]
@@ -96,14 +120,11 @@ class ShowQuote(ShowChallengeInterface):
         self.hidden_words = []
         self.hidden_words_idx = []
 
-        d = load_settings(self.view_id)
-        level = d['level']
-
         if self.current_quote_idx is not None:
             d['last_quote_idx'] = self.current_quote_idx
             db.save_settings(self.view_id, json.dumps(d))
 
-        words = self.quote_body_split()
+        words = self.quote_body_split(quote)
         words_w_idx = list(filter(lambda x: x[1] not in ["\n", "/", "-", "--"], list(enumerate(words))))
 
         # Hide level*10 percent of words
@@ -128,9 +149,9 @@ class ShowQuote(ShowChallengeInterface):
             self.hidden_words.append(w)
 
     def format_challenge(self) -> str:
-        (body, author) = self.quote_to_body_and_author()
+        (body, author) = self.quote_to_body_and_author(self.items[0])
 
-        words = self.quote_body_split()
+        words = self.quote_body_split(self.items[0])
         if not self.show_numbers:
             for i in self.hidden_words_idx:
                 words[i] = re.sub('.', '-', words[i])

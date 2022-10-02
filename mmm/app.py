@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO quotes: word max
-# if lvl < 5, new quote should be short
 # TODO help menus, working memory, memorization techniques
 # TODO text input: move cursor with arrow keys, home, end
 # - input_answer

@@ -92,8 +92,9 @@ class PreferencesView(PreferencesInterface):
 
 
 class StaticNumSeqView(ChallengeInterface):
-    def init_view_id(self):
+    def init_attr(self):
         self.view_id = StaticNumId
+        self.help_md_filename = "static_number_sequence.md"
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

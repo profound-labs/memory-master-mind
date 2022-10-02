@@ -7,9 +7,8 @@
 # - Show correct answer: decrease level.
 # - New challenge without correct answer: decrease level.
 
-from typing import List, Optional, Text, TypedDict
+from typing import List, Optional, TypedDict
 import json
-from rich.align import Align
 
 from textual import events
 from textual.views._grid_view import GridView
@@ -91,8 +90,10 @@ class ChallengeInterface(GridView):
     first_try: bool
     show_challenge_blocks_keys: bool = False
     is_text_challenge: bool = False
+    help_md_filename: str
 
-    def init_view_id(self):
+    def init_attr(self):
+        """Assign self.view_id and self.help_md_filename"""
         raise NotImplementedError
 
     def init_components(self):
@@ -101,7 +102,7 @@ class ChallengeInterface(GridView):
     def __init__(self):
         super().__init__()
 
-        self.init_view_id()
+        self.init_attr()
 
         d = load_settings(self.view_id)
         self.current_level = d["level"]

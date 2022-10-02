@@ -133,6 +133,7 @@ class PreferencesInterface(GridView):
         self.footer = Footer()
         self.footer.preferences = False
         self.footer.show_answer = False
+        self.footer.show_help = False
         self.footer.new_challenge = False
         self.footer.show_level = False
 

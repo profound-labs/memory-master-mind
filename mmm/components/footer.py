@@ -11,8 +11,11 @@ class Footer(Widget):
     new_challenge = Reactive(True)
     show_answer = Reactive(False)
     show_level = Reactive(True)
+    show_help = Reactive(True)
     level = Reactive(1)
     menu_enabled = Reactive(True)
+    scroll = Reactive(False)
+    go_back = Reactive(False)
 
     def render(self) -> RenderableType:
         if self.menu_enabled:
@@ -25,6 +28,12 @@ class Footer(Widget):
                 labels.append("R repeat")
             if self.show_answer:
                 labels.append("S show answer")
+            if self.show_help:
+                labels.append("? Help")
+            if self.scroll:
+                labels.append("Up/Down/PgUp/PgDown/Home/End scroll")
+            if self.go_back:
+                labels.append("Esc go back")
 
         else:
             style = "bold black on yellow"

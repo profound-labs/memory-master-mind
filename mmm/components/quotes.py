@@ -224,8 +224,9 @@ class PreferencesView(PreferencesInterface):
 
 
 class QuotesView(ChallengeInterface):
-    def init_view_id(self):
+    def init_attr(self):
         self.view_id = QuotesId
+        self.help_md_filename = "quotes_and_verses.md"
 
     def init_components(self):
         init_quotes()

@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
-# TODO help menus, working memory, memorization techniques
-# TODO text input: move cursor with arrow keys, home, end
-# - input_answer
-# - input_text
-
 import json
 from typing import Optional, TypedDict
+from rich.markdown import Markdown
 
 from textual.app import App
-from textual.widgets import Button, ButtonPressed
+from textual.widgets import Button, ButtonPressed, ScrollView
 from textual.views._grid_view import GridView
+from mmm.components.footer import Footer
 
 import mmm.db as db
-from mmm import IS_DEV
+from mmm import IS_DEV, MARKDOWN_DIR
 from mmm.components.home import HomeView
 
 from mmm.components.challenge_interface import ChallengeInterface
@@ -53,6 +50,8 @@ class MmmApp(App):
         await self.bind("h", "home", "Home")
         await self.bind("q", "maybe_quit", "Quit")
         await self.bind("p", "preferences", "Preferences")
+        await self.bind("escape", "go_back", "Go Back")
+        await self.bind("?", "help", "Help")
 
     def toggle_menu(self):
         self.menu_enabled = not self.menu_enabled
@@ -81,6 +80,48 @@ class MmmApp(App):
             return
 
         await self.dock_view(self.current_challenge.get_preferences_view())
+
+    async def action_go_back(self):
+        if not self.menu_enabled:
+            return
+        if self.current_challenge is None:
+            return
+
+        await self.load_view(self.current_challenge.view_id)
+
+    async def action_help(self):
+        if not self.menu_enabled:
+            return
+        if self.current_challenge is None:
+            return
+
+        self.view.layout.docks.clear() # type: ignore
+        self.view.widgets.clear()
+
+        footer = Footer()
+        footer.scroll = True
+        footer.go_back = True
+        footer.new_challenge = False
+        footer.preferences = False
+        footer.show_answer = False
+        footer.show_help = False
+        footer.show_level = False
+
+        help_view = ScrollView(gutter=1)
+
+        await self.view.dock(help_view, edge="top")
+        await self.view.dock(footer, edge="bottom", size=1, z=99)
+
+        md_path = MARKDOWN_DIR.joinpath(self.current_challenge.help_md_filename)
+
+        async def get_markdown() -> None:
+            with open(md_path, "r", encoding="utf8") as f:
+                md = Markdown(f.read(), hyperlinks=True)
+            await help_view.update(md)
+
+        await help_view.focus()
+
+        await self.call_later(get_markdown)
 
     async def load_view(self, name):
         if name in ["submit_pref", "cancel_pref"]:

@@ -147,8 +147,9 @@ class PreferencesView(PreferencesInterface):
 
 
 class MathArithmeticView(ChallengeInterface):
-    def init_view_id(self):
+    def init_attr(self):
         self.view_id = MathArithId
+        self.help_md_filename = "math_arithmetic.md"
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

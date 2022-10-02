@@ -95,8 +95,9 @@ class PreferencesView(PreferencesInterface):
 
 
 class TimedNumSeqView(ChallengeInterface):
-    def init_view_id(self):
+    def init_attr(self):
         self.view_id = TimedNumId
+        self.help_md_filename = "timed_number_sequence.md"
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)

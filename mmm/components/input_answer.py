@@ -42,11 +42,11 @@ class InputAnswer(Widget):
             return
 
         if self.only_numbers:
-            if event.key in ["h", "q", "p", "s", "enter", "escape"]:
+            if event.key in ["h", "q", "p", "s", "?", "enter", "escape"]:
                 return
         else:
             if self.app.menu_enabled == True: # type: ignore
-                if event.key in ["h", "q", "p", "s", "enter", "escape", "ctrl+i"]:
+                if event.key in ["h", "q", "p", "s", "?", "enter", "escape", "ctrl+i"]:
                     return
             elif event.key in ["escape", "ctrl+i"]:
                 return

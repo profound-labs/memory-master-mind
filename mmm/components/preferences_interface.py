@@ -131,6 +131,7 @@ class PreferencesInterface(GridView):
         self.grid.add_areas(footer="c1-start|c2-end,footer")
 
         self.footer = Footer()
+        self.footer.select_input = True
         self.footer.preferences = False
         self.footer.show_answer = False
         self.footer.show_help = False

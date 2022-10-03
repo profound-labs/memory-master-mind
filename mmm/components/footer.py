@@ -16,6 +16,7 @@ class Footer(Widget):
     menu_enabled = Reactive(True)
     scroll = Reactive(False)
     go_back = Reactive(False)
+    select_input = Reactive(False)
 
     def render(self) -> RenderableType:
         if self.menu_enabled:
@@ -32,6 +33,8 @@ class Footer(Widget):
                 labels.append("? Help")
             if self.scroll:
                 labels.append("Up/Down/PgUp/PgDown/Home/End scroll")
+            if self.select_input:
+                labels.append("Up/Down/Tab/Shift-Tab select")
             if self.go_back:
                 labels.append("Esc go back")
 

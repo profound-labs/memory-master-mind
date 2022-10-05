@@ -118,12 +118,23 @@ class TimedNumSeqView(ChallengeInterface):
         self.preferences_view = PreferencesView(self.view_id)
         return self.preferences_view
 
+    def blink_number(self):
+        self.show_numbers.items.append("")
+        current = len(self.show_numbers.items) - 1
+        old_current_item = self.show_numbers.current_item
+        self.show_numbers.current_item = current
+        def reveal():
+            self.show_numbers.current_item = old_current_item
+            self.show_numbers.items.pop()
+        self.set_timer(0.5, reveal)
+
     def show_next_per_secs(self):
         d = load_settings(self.view_id)
         secs = d['seconds_per_level']
 
         if (self.challenge_timer.seconds_remain - 1) % secs == 0:
             self.show_numbers.show_next_item()
+            self.blink_number()
 
     def start_timer(self, seconds_per_level: int):
         self.challenge_timer.stop_timer()

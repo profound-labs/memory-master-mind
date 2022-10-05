@@ -127,7 +127,7 @@ class MmmApp(App):
         if name in ["submit_pref", "cancel_pref"]:
             if self.current_challenge is not None:
                 await self.dock_view(self.current_challenge)
-                self.current_challenge.new_challenge()
+                self.current_challenge.new_challenge(regenerate=False)
                 await self.current_challenge.focus_input()
             return
 

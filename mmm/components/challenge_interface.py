@@ -38,6 +38,7 @@ class Settings(TypedDict):
     words_max: int
     quotes_path: str
     last_quote_idx: int
+    show_first_letter: bool
 
 
 def default_settings(view_id: Optional[str] = None) -> Settings:
@@ -55,6 +56,7 @@ def default_settings(view_id: Optional[str] = None) -> Settings:
         words_max = 999,
         quotes_path = "",
         last_quote_idx = 0,
+        show_first_letter=True,
     )
 
     if view_id is not None and view_id == QuotesId:

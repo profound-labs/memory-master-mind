@@ -153,8 +153,12 @@ class ShowQuote(ShowChallengeInterface):
 
         words = self.quote_body_split(self.items[0])
         if not self.show_numbers:
+            d = load_settings(self.view_id)
             for i in self.hidden_words_idx:
-                words[i] = re.sub('.', '-', words[i])
+                if len(words[i]) > 2 and d['show_first_letter']:
+                    words[i] = words[i][0] + re.sub('.', '-', words[i][1:])
+                else:
+                    words[i] = re.sub('.', '-', words[i])
 
         body = self.quote_words_join(words)
 
@@ -189,6 +193,11 @@ class PreferencesView(PreferencesInterface):
 
         d['quotes_path'] = self.inputs['quotes_path'].content
 
+        if self.inputs['show_first_letter'].content == "True":
+            d['show_first_letter'] = True
+        else:
+            d['show_first_letter'] = False
+
         db.save_settings(self.view_id, json.dumps(d))
 
         QUOTES.clear()
@@ -200,6 +209,7 @@ class PreferencesView(PreferencesInterface):
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
         self.labels['words_max'] = FormLabel(label="Words max:")
+        self.labels['show_first_letter'] = FormLabel(label="Show first letter:")
         self.labels['quotes_path'] = FormLabel(label="Quotes CSV file path:")
 
         for k in ['level_max', 'ch_per_level', 'words_max']:
@@ -209,6 +219,13 @@ class PreferencesView(PreferencesInterface):
                 allow_regex=r'[0-9]',
                 input_height=1,
             )
+
+        self.inputs['show_first_letter'] = InputText(
+            label='show_first_letter',
+            content=str(d['show_first_letter']),
+            is_bool=True,
+            input_height=1,
+        )
 
         self.inputs['quotes_path'] = InputText(
             label='quotes_path',
@@ -245,7 +262,7 @@ class QuotesView(ChallengeInterface):
         self.input_answer.only_numbers = False
 
     def get_instruction(self) -> str:
-        return "Memorize, then type it. Caps, linebreaks, author/attrib. are optional."
+        return "Type the hidden words. Caps, punctuation, linebreaks are optional."
 
     def get_preferences_view(self):
         self.preferences_view = PreferencesView(self.view_id)

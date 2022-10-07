@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-# Diffuculty level sules:
-#
-# - Correct answer on first try: increase level.
-# - Wrong answer on first try, but correct answer eventually: stay on same level.
-# - Show correct answer: decrease level.
-# - New challenge without correct answer: decrease level.
-
 from typing import List, Optional, TypedDict
 import json
 

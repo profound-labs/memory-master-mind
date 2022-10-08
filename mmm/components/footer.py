@@ -13,6 +13,8 @@ class Footer(Widget):
     show_level = Reactive(True)
     show_help = Reactive(True)
     level = Reactive(1)
+    ch_per_current_level = Reactive(1)
+    ch_per_level = Reactive(1)
     menu_enabled = Reactive(True)
     scroll = Reactive(False)
     go_back = Reactive(False)
@@ -43,6 +45,10 @@ class Footer(Widget):
             labels = ["[Text Input Mode] Press Tab to enable the menu"]
 
         if self.show_level:
-            labels.append(f"Level {self.level}")
+            s = f"Level {self.level}"
+            if self.ch_per_level > 1:
+                s += f" ({self.ch_per_current_level}/{self.ch_per_level})"
+            labels.append(s)
+
         text = " " + ", ".join(labels)
         return Text(text=text, style=style, justify="left")

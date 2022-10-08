@@ -108,7 +108,11 @@ class ChallengeInterface(GridView):
     def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
         self.current_level = d["level"]
+
         self.footer.level = self.current_level
+        self.footer.ch_per_level = d["ch_per_level"]
+        self.footer.ch_per_current_level = self.ch_per_current_level + 1
+
         self.first_try = True
 
         if self.view_id != QuotesId:

@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 
 # Static Number Sequence
-#
-# Memorize the displayed number sequence, then start typing it.
-# When you start typing, the number sequence is hidden.
-# After starting to type, the show answer action cancels the challenge.
 
 import re
 import math
 from random import randint
 import json
 
-from mmm.types import StaticNumId
+from mmm.types import StaticNumId, load_settings
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
 from mmm.components.input_answer import InputAnswer
-from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface, load_settings
+from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from typing import List, Optional, TypedDict
 import json
 
 from textual import events
@@ -13,61 +12,8 @@ from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.show_challenge_interface import ShowChallengeInterface
 
 import mmm.db as db
-from mmm.types import QuotesId, State
+from mmm.types import QuotesId, Settings, State, load_settings
 from mmm.components.header import Header
-
-
-class Settings(TypedDict):
-    digits_min: int
-    digits_max: int
-    ch_per_level: int
-    seconds_per_level: int
-    level: int
-    level_max: int
-    zero_padded: bool
-    operations: List[str]
-    negatives: bool
-    solve_frac_dec: int
-    words_max: int
-    quotes_path: str
-    last_quote_idx: int
-    show_first_letter: bool
-
-
-def default_settings(view_id: Optional[str] = None) -> Settings:
-    d = Settings(
-        digits_min = 1,
-        digits_max = 2,
-        ch_per_level = 2,
-        seconds_per_level = 5,
-        level = 2,
-        level_max = 999,
-        zero_padded = False,
-        operations = ["+", "-"],
-        negatives = False,
-        solve_frac_dec = 1,
-        words_max = 999,
-        quotes_path = "",
-        last_quote_idx = 0,
-        show_first_letter=True,
-    )
-
-    if view_id is not None and view_id == QuotesId:
-        d['ch_per_level'] = 1
-        d['level_max'] = 10
-
-    return d
-
-def load_settings(view_id: str) -> Settings:
-    res = db.get_settings(view_id)
-    if res:
-        d: Settings = json.loads(res[2])
-        return d
-    else:
-        d = default_settings(view_id)
-        s = json.dumps(d)
-        db.save_settings(view_id, s)
-        return d
 
 
 class ChallengeInterface(GridView):
@@ -245,17 +191,18 @@ class ChallengeInterface(GridView):
                 answers = self.show_numbers.format_answers(False)
                 self.state = self.input_answer.check_answer(answers)
 
-        if self.state == State.WRONG:
-            self.decr_level()
-            self.first_try = False
-            if not self.input_answer.only_numbers:
-                self.set_menu_enabled(False)
+                if self.state == State.CORRECT:
+                    self.incr_level()
+                    self.show_numbers.show_numbers = True
+                    self.footer.show_answer = False
+                    self.input_answer.end_challenge()
+                    self.app.save_stats() # type: ignore
 
-        if self.state == State.CORRECT:
-            self.incr_level()
-            self.show_numbers.show_numbers = True
-            self.footer.show_answer = False
-            self.input_answer.end_challenge()
+                if self.state == State.WRONG:
+                    self.decr_level()
+                    self.first_try = False
+                    if not self.input_answer.only_numbers:
+                        self.set_menu_enabled(False)
 
         self.upd_state(self.state)
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import json
-from typing import Optional, TypedDict
+import datetime
+from pathlib import Path
+from typing import Optional
 from rich.markdown import Markdown
 
 from textual.app import App
@@ -19,27 +21,8 @@ from mmm.components.timed_number_sequence import TimedNumSeqView
 from mmm.components.math_arithmetic import MathArithmeticView
 from mmm.components.quotes import QuotesView
 
-from mmm.types import AppId, HomeId, StaticNumId, TimedNumId, MathArithId, QuotesId
-
-class Settings(TypedDict):
-    last_challenge: str
-
-def default_settings() -> Settings:
-    return Settings(
-        # Load Home view for the first time.
-        last_challenge = HomeId,
-    )
-
-def load_settings() -> Settings:
-    res = db.get_settings(AppId)
-    if res:
-        d: Settings = json.loads(res[2])
-        return d
-    else:
-        d = default_settings()
-        s = json.dumps(d)
-        db.save_settings(AppId, s)
-        return d
+from mmm.types import AppId, HomeId, StaticNumId, Stats, TimedNumId, MathArithId, QuotesId
+from mmm.types import app_load_settings, load_settings
 
 class MmmApp(App):
     home: HomeView
@@ -76,24 +59,26 @@ class MmmApp(App):
     async def action_preferences(self):
         if not self.menu_enabled:
             return
-        if self.current_challenge is None:
-            return
 
-        await self.dock_view(self.current_challenge.get_preferences_view())
+        if self.current_challenge is None:
+            await self.dock_view(self.home.get_preferences_view())
+        else:
+            await self.dock_view(self.current_challenge.get_preferences_view())
 
     async def action_go_back(self):
         if not self.menu_enabled:
             return
+
         if self.current_challenge is None:
-            return
+            await self.action_home()
+        else:
+            await self.load_view(self.current_challenge.view_id)
 
-        await self.load_view(self.current_challenge.view_id)
-
-    async def action_help(self):
+    async def action_help(self, help_md_filename: Optional[str] = None):
         if not self.menu_enabled:
             return
-        if self.current_challenge is None:
-            return
+        if self.current_challenge is None and help_md_filename is None:
+            help_md_filename = "mmm_help.md"
 
         self.view.layout.docks.clear() # type: ignore
         self.view.widgets.clear()
@@ -112,7 +97,12 @@ class MmmApp(App):
         await self.view.dock(help_view, edge="top")
         await self.view.dock(footer, edge="bottom", size=1, z=99)
 
-        md_path = MARKDOWN_DIR.joinpath(self.current_challenge.help_md_filename)
+        if help_md_filename is not None:
+            md_path = MARKDOWN_DIR.joinpath(help_md_filename)
+        elif self.current_challenge is not None:
+            md_path = MARKDOWN_DIR.joinpath(self.current_challenge.help_md_filename)
+        else:
+            return
 
         async def get_markdown() -> None:
             with open(md_path, "r", encoding="utf8") as f:
@@ -129,10 +119,14 @@ class MmmApp(App):
                 await self.dock_view(self.current_challenge)
                 self.current_challenge.new_challenge(regenerate=False)
                 await self.current_challenge.focus_input()
-            return
+            else:
+                await self.action_home()
+
+        if name == "Help":
+            await self.action_help("mmm_help.md")
 
         if name in [StaticNumId, TimedNumId, MathArithId, QuotesId]:
-            d = load_settings()
+            d = app_load_settings()
             d["last_challenge"] = name
             db.save_settings(AppId, json.dumps(d))
 
@@ -163,8 +157,52 @@ class MmmApp(App):
     async def on_mount(self) -> None:
         self.home = HomeView()
 
-        d = load_settings()
+        d = app_load_settings()
         await self.load_view(d['last_challenge'])
+
+    def save_stats(self):
+        d = app_load_settings()
+        if not d['save_stats'] or d['stats_path'] == "":
+            return
+
+        stats_path = Path(d['stats_path']).expanduser()
+
+        if self.current_challenge is None:
+            return
+
+        secs = f"{self.current_challenge.input_answer.time_elapsed:.1f}"
+
+        if d['stats_include_settings']:
+            s = load_settings(self.current_challenge.view_id)
+            a = list(map(lambda i: f"{i[0]}={i[1]}", s.items()))
+            setts = '"' + "|".join(a) + '"'
+        else:
+            setts = ''
+
+        stats = Stats(
+            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            challenge_name=self.current_challenge.view_id,
+            level=str(self.current_challenge.current_level),
+            solved_in_secs=secs,
+            first_try=str(self.current_challenge.first_try),
+            settings=setts,
+        )
+
+        keys = stats.keys()
+        csv_header = ",".join(keys)
+
+        values = []
+        for k in keys:
+            values.append(stats[k])
+
+        csv_row = ",".join(values)
+
+        if not stats_path.exists():
+            with open(stats_path, "w", encoding="utf8") as f:
+                f.write(csv_header + "\n")
+
+        with open(stats_path, "a", encoding="utf8") as f:
+            f.write(csv_row + "\n")
 
 def start():
     db.db_init()

@@ -1,21 +1,84 @@
 #!/usr/bin/env python3
 
+import json
+
 from typing import List, Optional
 
 from textual import events
 from textual.widgets import ButtonPressed
 from textual.views._grid_view import GridView
+from mmm.components.footer import Footer
+from mmm.components.form_label import FormLabel
+from mmm.components.input_text import InputText
+from mmm.components.preferences_interface import PreferencesInterface
 
-from mmm.types import StaticNumId, TimedNumId, MathArithId, QuotesId
+import mmm.db as db
+from mmm.types import app_load_settings
+from mmm.types import AppId, HomeId, StaticNumId, TimedNumId, MathArithId, QuotesId
 from mmm.components.header import Header
 from mmm.components.form_button import FormButton
 
+
+class PreferencesView(PreferencesInterface):
+    def save_settings(self):
+        d = app_load_settings()
+
+        d['stats_path'] = self.inputs['stats_path'].content
+
+        if self.inputs['save_stats'].content == "True":
+            d['save_stats'] = True
+        else:
+            d['save_stats'] = False
+
+        if self.inputs['stats_include_settings'].content == "True":
+            d['stats_include_settings'] = True
+        else:
+            d['stats_include_settings'] = False
+
+        db.save_settings(AppId, json.dumps(d))
+
+    def setup_labels_inputs(self):
+        d = app_load_settings()
+
+        self.labels['save_stats'] = FormLabel(label="Save stats:")
+        self.labels['stats_include_settings'] = FormLabel(label="Stats include settings:")
+        self.labels['stats_path'] = FormLabel(label="Stats CSV file path:")
+
+        self.inputs['save_stats'] = InputText(
+            label='save_stats',
+            content=str(d['save_stats']),
+            is_bool=True,
+            input_height=1,
+        )
+
+        self.inputs['stats_include_settings'] = InputText(
+            label='stats_include_settings',
+            content=str(d['stats_include_settings']),
+            is_bool=True,
+            input_height=1,
+        )
+
+        self.inputs['stats_path'] = InputText(
+            label='stats_path',
+            content=str(d['stats_path']),
+            is_text=True,
+            input_height=1,
+        )
+
+        for idx, k in enumerate(self.inputs.keys()):
+            self.grid.add_row(f"r{idx+2}", size=1)
+            self.grid.add_widget(self.labels[k])
+            self.grid.add_widget(self.inputs[k])
+
 class HomeView(GridView):
+    view_id: str
+    preferences_view: PreferencesInterface
     challenges: List[FormButton] = []
     selected_idx: Optional[int] = None
 
     def __init__(self):
         super().__init__()
+        self.view_id = HomeId
         self.header = Header(title="Memory Master Mind")
 
     def highlight_selected(self):
@@ -75,6 +138,9 @@ class HomeView(GridView):
         self.grid.set_gap(0, 1)
         self.grid.add_column("column")
 
+        self.grid.add_row("spc1")
+        self.grid.add_widget(Header(title=""))
+
         self.grid.add_row("row1", size=1)
         self.grid.add_widget(self.header)
 
@@ -85,6 +151,24 @@ class HomeView(GridView):
                 FormButton(label=i)
             )
 
+        self.challenges.append(FormButton(label="Help"))
+
         for idx, _ in enumerate(self.challenges):
             self.grid.add_row(f"row{idx+2}", size=1)
             self.grid.add_widget(self.challenges[idx])
+
+        self.footer = Footer()
+        self.footer.new_challenge = False
+        self.footer.show_answer = False
+        self.footer.show_level = False
+        self.footer.select_input = True
+
+        self.grid.add_row("spc2")
+        self.grid.add_widget(Header(title=""))
+
+        self.grid.add_row("footer", size=1)
+        self.grid.add_widget(self.footer)
+
+    def get_preferences_view(self):
+        self.preferences_view = PreferencesView(AppId)
+        return self.preferences_view

@@ -11,12 +11,12 @@ import csv
 from typing import List, Optional, Tuple
 
 from mmm import PACKAGE_QUOTES_PATH
-from mmm.types import QuotesId, RE_PUNCT
+from mmm.types import QuotesId, RE_PUNCT, load_settings
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
 from mmm.components.input_answer import InputAnswer
-from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface, load_settings
+from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 

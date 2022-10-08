@@ -8,12 +8,12 @@ from random import randint
 import json
 from typing import List
 
-from mmm.types import TimedNumId
+from mmm.types import TimedNumId, load_settings
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
 from mmm.components.input_answer import InputAnswer
-from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface, load_settings
+from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
 from mmm.components.preferences_interface import PreferencesInterface
 from mmm.components.input_text import InputText
 

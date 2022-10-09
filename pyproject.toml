@@ -15,6 +15,7 @@ python-dotenv = "^0.21.0"
 
 [tool.poetry.scripts]
 mmm = 'mmm.runner:main'
+memory-master-mind = 'mmm.runner:main'
 
 [build-system]
 requires = ["poetry-core"]

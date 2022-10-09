@@ -5,15 +5,15 @@ import json
 from textual import events
 from textual.views._grid_view import GridView
 
-from mmm.components.challenge_timer import ChallengeTimer
-from mmm.components.footer import Footer
-from mmm.components.input_answer import InputAnswer
-from mmm.components.preferences_interface import PreferencesInterface
-from mmm.components.show_challenge_interface import ShowChallengeInterface
+from memory_master_mind.components.challenge_timer import ChallengeTimer
+from memory_master_mind.components.footer import Footer
+from memory_master_mind.components.input_answer import InputAnswer
+from memory_master_mind.components.preferences_interface import PreferencesInterface
+from memory_master_mind.components.show_challenge_interface import ShowChallengeInterface
 
-import mmm.db as db
-from mmm.types import QuotesId, Settings, State, load_settings
-from mmm.components.header import Header
+import memory_master_mind.db as db
+from memory_master_mind.types import QuotesId, Settings, State, load_settings
+from memory_master_mind.components.header import Header
 
 
 class ChallengeInterface(GridView):

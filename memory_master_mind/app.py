@@ -9,20 +9,20 @@ from rich.markdown import Markdown
 from textual.app import App
 from textual.widgets import Button, ButtonPressed, ScrollView
 from textual.views._grid_view import GridView
-from mmm.components.footer import Footer
+from memory_master_mind.components.footer import Footer
 
-import mmm.db as db
-from mmm import IS_DEV, MARKDOWN_DIR
-from mmm.components.home import HomeView
+import memory_master_mind.db as db
+from memory_master_mind import IS_DEV, MARKDOWN_DIR
+from memory_master_mind.components.home import HomeView
 
-from mmm.components.challenge_interface import ChallengeInterface
-from mmm.components.static_number_sequence import StaticNumSeqView
-from mmm.components.timed_number_sequence import TimedNumSeqView
-from mmm.components.math_arithmetic import MathArithmeticView
-from mmm.components.quotes import QuotesView
+from memory_master_mind.components.challenge_interface import ChallengeInterface
+from memory_master_mind.components.static_number_sequence import StaticNumSeqView
+from memory_master_mind.components.timed_number_sequence import TimedNumSeqView
+from memory_master_mind.components.math_arithmetic import MathArithmeticView
+from memory_master_mind.components.quotes import QuotesView
 
-from mmm.types import AppId, HomeId, StaticNumId, Stats, TimedNumId, MathArithId, QuotesId
-from mmm.types import app_load_settings, load_settings
+from memory_master_mind.types import AppId, HomeId, StaticNumId, Stats, TimedNumId, MathArithId, QuotesId
+from memory_master_mind.types import app_load_settings, load_settings
 
 class MmmApp(App):
     home: HomeView

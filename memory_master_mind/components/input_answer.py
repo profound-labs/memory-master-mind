@@ -14,7 +14,7 @@ from textual import events
 from textual.reactive import Reactive
 from textual.widget import Widget
 
-from mmm.types import RE_PUNCT, State
+from memory_master_mind.types import RE_PUNCT, State
 
 class InputAnswer(Widget):
     content = Reactive("")

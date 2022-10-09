@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "mmm"
+name = "memory-master-mind"
 version = "0.1.0"
-description = "Memory Master Mind - memory training in the terminal"
+description = "MMM - Memory Master Mind - memory training in the terminal"
 authors = ["Gambhiro <profound.labs@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -14,8 +14,8 @@ appdirs = "^1.4.4"
 python-dotenv = "^0.21.0"
 
 [tool.poetry.scripts]
-mmm = 'mmm.runner:main'
-memory-master-mind = 'mmm.runner:main'
+mmm = 'memory_master_mind.runner:main'
+memory-master-mind = 'memory_master_mind.runner:main'
 
 [build-system]
 requires = ["poetry-core"]

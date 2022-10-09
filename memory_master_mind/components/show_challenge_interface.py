@@ -7,7 +7,7 @@ from rich.text import Text
 from textual.reactive import Reactive
 from textual.widget import Widget
 
-from mmm.types import State
+from memory_master_mind.types import State
 
 class ShowChallengeInterface(Widget):
     state = Reactive(State.SHOW_CHALLENGE)

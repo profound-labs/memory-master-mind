@@ -6,11 +6,11 @@ from textual import events
 from textual.views._grid_view import GridView
 from textual.widgets import ButtonPressed
 
-from mmm.components.header import Header
-from mmm.components.footer import Footer
-from mmm.components.input_text import InputText
-from mmm.components.form_button import FormButton
-from mmm.components.form_label import FormLabel
+from memory_master_mind.components.header import Header
+from memory_master_mind.components.footer import Footer
+from memory_master_mind.components.input_text import InputText
+from memory_master_mind.components.form_button import FormButton
+from memory_master_mind.components.form_label import FormLabel
 
 
 class PreferencesInterface(GridView):

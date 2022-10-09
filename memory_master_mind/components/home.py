@@ -7,16 +7,16 @@ from typing import List, Optional
 from textual import events
 from textual.widgets import ButtonPressed
 from textual.views._grid_view import GridView
-from mmm.components.footer import Footer
-from mmm.components.form_label import FormLabel
-from mmm.components.input_text import InputText
-from mmm.components.preferences_interface import PreferencesInterface
+from memory_master_mind.components.footer import Footer
+from memory_master_mind.components.form_label import FormLabel
+from memory_master_mind.components.input_text import InputText
+from memory_master_mind.components.preferences_interface import PreferencesInterface
 
-import mmm.db as db
-from mmm.types import app_load_settings
-from mmm.types import AppId, HomeId, StaticNumId, TimedNumId, MathArithId, QuotesId
-from mmm.components.header import Header
-from mmm.components.form_button import FormButton
+import memory_master_mind.db as db
+from memory_master_mind.types import app_load_settings
+from memory_master_mind.types import AppId, HomeId, StaticNumId, TimedNumId, MathArithId, QuotesId
+from memory_master_mind.components.header import Header
+from memory_master_mind.components.form_button import FormButton
 
 
 class PreferencesView(PreferencesInterface):

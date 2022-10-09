@@ -12,15 +12,15 @@ from typing import List, Optional, Tuple
 
 from rich.text import Text
 
-from mmm import PACKAGE_QUOTES_PATH
-from mmm.types import QuotesId, RE_PUNCT, load_settings
-import mmm.db as db
-from mmm.components.footer import Footer
-from mmm.components.form_label import FormLabel
-from mmm.components.input_answer import InputAnswer
-from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
-from mmm.components.preferences_interface import PreferencesInterface
-from mmm.components.input_text import InputText
+from memory_master_mind import PACKAGE_QUOTES_PATH
+from memory_master_mind.types import QuotesId, RE_PUNCT, load_settings
+import memory_master_mind.db as db
+from memory_master_mind.components.footer import Footer
+from memory_master_mind.components.form_label import FormLabel
+from memory_master_mind.components.input_answer import InputAnswer
+from memory_master_mind.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
+from memory_master_mind.components.preferences_interface import PreferencesInterface
+from memory_master_mind.components.input_text import InputText
 
 QUOTES = []
 

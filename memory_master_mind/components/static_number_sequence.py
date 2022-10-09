@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Timed Number Sequence
+# Static Number Sequence
 
 import re
 import math
@@ -10,19 +10,19 @@ from typing import List
 
 from rich.text import Text
 
-from mmm.types import TimedNumId, is_prime, load_settings
-import mmm.db as db
-from mmm.components.footer import Footer
-from mmm.components.form_label import FormLabel
-from mmm.components.input_answer import InputAnswer
-from mmm.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
-from mmm.components.preferences_interface import PreferencesInterface
-from mmm.components.input_text import InputText
+from memory_master_mind.types import StaticNumId, load_settings, is_prime
+import memory_master_mind.db as db
+from memory_master_mind.components.footer import Footer
+from memory_master_mind.components.form_label import FormLabel
+from memory_master_mind.components.input_answer import InputAnswer
+from memory_master_mind.components.challenge_interface import ChallengeInterface, ShowChallengeInterface
+from memory_master_mind.components.preferences_interface import PreferencesInterface
+from memory_master_mind.components.input_text import InputText
 
 class ShowNumbers(ShowChallengeInterface):
     def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
-        a = []
+        a: List[str] = []
         for _ in range(0, d['level']):
             range_from = int(math.pow(10, d['digits_min']- 1)) - 1
             range_to = int(math.pow(10, d['digits_max'])) - 1
@@ -34,13 +34,9 @@ class ShowNumbers(ShowChallengeInterface):
                 a.append(str(n))
         self.items = a
 
-        self.current_item = 0
-
     def format_challenge_plain(self) -> str:
-        if self.show_numbers:
-            text = self.items[self.current_item]
-        else:
-            text = " ".join(self.items)
+        text = " ".join(self.items)
+        if not self.show_numbers:
             text = re.sub('.', '-', text)
 
         return text
@@ -48,12 +44,15 @@ class ShowNumbers(ShowChallengeInterface):
     def format_challenge_rich(self) -> Text:
         if self.show_numbers:
             d = load_settings(self.view_id)
-            s = self.items[self.current_item]
+            text = Text()
+            for idx, i in enumerate(self.items):
+                if idx != 0:
+                    text.append(" ")
 
-            if s.isdigit() and d['primes_are_red'] and is_prime(int(s)):
-                text = Text(s, style="red")
-            else:
-                text = Text(s)
+                if i.isdigit() and d['primes_are_red'] and is_prime(int(i)):
+                    text.append(i, style="red")
+                else:
+                    text.append(i)
 
         else:
             s = " ".join(self.items)
@@ -65,19 +64,6 @@ class ShowNumbers(ShowChallengeInterface):
     def generate_answer(self) -> str:
         return " ".join(self.items)
 
-    def format_answer_rich(self) -> Text:
-        d = load_settings(self.view_id)
-        text = Text()
-        for idx, i in enumerate(self.items):
-            if idx != 0:
-                text.append(" ")
-
-            if i.isdigit() and d['primes_are_red'] and is_prime(int(i)):
-                text.append(i, style="red")
-            else:
-                text.append(i)
-
-        return text
 
 class PreferencesView(PreferencesInterface):
     def save_settings(self):
@@ -137,10 +123,10 @@ class PreferencesView(PreferencesInterface):
             self.grid.add_widget(self.inputs[k])
 
 
-class TimedNumSeqView(ChallengeInterface):
+class StaticNumSeqView(ChallengeInterface):
     def init_attr(self):
-        self.view_id = TimedNumId
-        self.help_md_filename = "timed_number_sequence.md"
+        self.view_id = StaticNumId
+        self.help_md_filename = "static_number_sequence.md"
 
     def init_components(self):
         self.preferences_view = PreferencesView(self.view_id)
@@ -151,40 +137,9 @@ class TimedNumSeqView(ChallengeInterface):
         self.show_numbers = ShowNumbers(self.view_id)
         self.input_answer = InputAnswer(self.get_instruction())
 
-        self.show_challenge_blocks_keys = True
-        self.input_answer.show_challenge_blocks_keys = True
-
     def get_instruction(self) -> str:
-        return "The numbers will appear one by one. Memorize, then type them."
+        return "Memorize the numbers, then type them."
 
     def get_preferences_view(self):
         self.preferences_view = PreferencesView(self.view_id)
         return self.preferences_view
-
-    def blink_number(self):
-        self.show_numbers.items.append("")
-        current = len(self.show_numbers.items) - 1
-        old_current_item = self.show_numbers.current_item
-        self.show_numbers.current_item = current
-        def reveal():
-            self.show_numbers.current_item = old_current_item
-            self.show_numbers.items.pop()
-        self.set_timer(0.5, reveal)
-
-    def show_next_per_secs(self):
-        d = load_settings(self.view_id)
-        secs = d['seconds_per_level']
-
-        if (self.challenge_timer.seconds_remain - 1) % secs == 0:
-            self.show_numbers.show_next_item()
-            self.blink_number()
-
-    def start_timer(self, seconds_per_level: int):
-        self.challenge_timer.stop_timer()
-        if seconds_per_level != 0:
-            secs = seconds_per_level * self.current_level
-            self.challenge_timer.start_timer(
-                secs=secs,
-                final_cb=self.do_started_answer,
-                tick_cb=self.show_next_per_secs,
-            )

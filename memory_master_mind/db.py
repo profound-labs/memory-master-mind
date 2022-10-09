@@ -2,7 +2,7 @@
 
 import sqlite3
 import contextlib
-from mmm import DB_PATH
+from memory_master_mind import DB_PATH
 
 def create_challenge_settings_table() -> None:
     query = """

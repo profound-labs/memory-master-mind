@@ -6,7 +6,7 @@ import math
 from enum import Enum
 from typing import List, Optional, TypedDict
 
-import mmm.db as db
+import memory_master_mind.db as db
 
 class State(int, Enum):
     SHOW_CHALLENGE = 0

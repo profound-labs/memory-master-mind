@@ -9,7 +9,7 @@ app.add_typer(index_app, name="index")
 
 @app.command()
 def cli():
-    from mmm.app import start
+    from memory_master_mind.app import start
     start()
 
 def main():

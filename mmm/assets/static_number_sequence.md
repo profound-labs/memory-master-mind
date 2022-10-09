@@ -17,6 +17,8 @@
 
 Memorize the sequence of numbers before the timer ends, then type them in the order they were given.
 
+Primes are red, when that setting is enabled.
+
 With each successive level, both the sequence and the time is increased.
 
 Use the Preferences menu to customize the challenge such as how many digits are included, or how many seconds per level are given.

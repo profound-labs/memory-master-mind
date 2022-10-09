@@ -2,6 +2,7 @@
 
 import json
 import re
+import math
 from enum import Enum
 from typing import List, Optional, TypedDict
 
@@ -66,7 +67,7 @@ class Settings(TypedDict):
     quotes_path: str
     last_quote_idx: int
     show_first_letter: bool
-
+    primes_are_red: bool
 
 def default_settings(view_id: Optional[str] = None) -> Settings:
     d = Settings(
@@ -84,6 +85,7 @@ def default_settings(view_id: Optional[str] = None) -> Settings:
         quotes_path = "",
         last_quote_idx = 0,
         show_first_letter=True,
+        primes_are_red=True,
     )
 
     if view_id is not None and view_id == QuotesId:
@@ -111,3 +113,10 @@ class Stats(TypedDict):
     solved_in_secs: str
     first_try: str
     settings: str
+
+
+def is_prime(n):
+  for i in range(2, int(math.sqrt(n)) + 1):
+    if (n % i) == 0:
+      return False
+  return True

@@ -66,22 +66,16 @@ class InputAnswer(Widget):
             else:
                 self.content += event.key
 
-    def check_answer(self, correct_answers: List[str]) -> State:
+    def check_answer(self, correct_answer: str) -> State:
         text = self.content.strip().lower()
         text = re.sub(RE_PUNCT, '', text)
         text = re.sub(r'  +', ' ', text)
 
-        ok = False
-        for i in correct_answers:
-            answer = i.strip().lower()
-            answer = re.sub(RE_PUNCT, '', answer)
-            answer = re.sub(r'  +', ' ', answer)
+        answer = correct_answer.strip().lower()
+        answer = re.sub(RE_PUNCT, '', answer)
+        answer = re.sub(r'  +', ' ', answer)
 
-            if text == answer:
-                ok = True
-                break
-
-        if ok:
+        if text == answer:
             self.state = State.CORRECT
         else:
             self.state = State.WRONG

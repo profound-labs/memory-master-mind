@@ -8,7 +8,9 @@ from random import randint
 import json
 from typing import List
 
-from mmm.types import TimedNumId, load_settings
+from rich.text import Text
+
+from mmm.types import TimedNumId, is_prime, load_settings
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -34,20 +36,48 @@ class ShowNumbers(ShowChallengeInterface):
 
         self.current_item = 0
 
-    def format_challenge(self) -> str:
-        text = self.items[self.current_item]
-        if not self.show_numbers:
+    def format_challenge_plain(self) -> str:
+        if self.show_numbers:
+            text = self.items[self.current_item]
+        else:
+            text = " ".join(self.items)
             text = re.sub('.', '-', text)
 
         return text
 
-    def format_answers(self, _: bool) -> List[str]:
-        a = " ".join(self.items)
-        return [a]
+    def format_challenge_rich(self) -> Text:
+        if self.show_numbers:
+            d = load_settings(self.view_id)
+            s = self.items[self.current_item]
+
+            if s.isdigit() and d['primes_are_red'] and is_prime(int(s)):
+                text = Text(s, style="red")
+            else:
+                text = Text(s)
+
+        else:
+            s = " ".join(self.items)
+            s = re.sub('.', '-', s)
+            text = Text(s)
+
+        return text
 
     def generate_answer(self) -> str:
         return " ".join(self.items)
 
+    def format_answer_rich(self) -> Text:
+        d = load_settings(self.view_id)
+        text = Text()
+        for idx, i in enumerate(self.items):
+            if idx != 0:
+                text.append(" ")
+
+            if i.isdigit() and d['primes_are_red'] and is_prime(int(i)):
+                text.append(i, style="red")
+            else:
+                text.append(i)
+
+        return text
 
 class PreferencesView(PreferencesInterface):
     def save_settings(self):
@@ -55,6 +85,11 @@ class PreferencesView(PreferencesInterface):
 
         for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             d[k] = int(self.inputs[k].content)
+
+        if self.inputs['primes_are_red'].content == "True":
+            d['primes_are_red'] = True
+        else:
+            d['primes_are_red'] = False
 
         if self.inputs['zero_padded'].content == "True":
             d['zero_padded'] = True
@@ -71,6 +106,7 @@ class PreferencesView(PreferencesInterface):
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
         self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
+        self.labels['primes_are_red'] = FormLabel(label="Primes are red:")
         self.labels['zero_padded'] = FormLabel(label="Zero padded:")
 
         for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
@@ -80,6 +116,13 @@ class PreferencesView(PreferencesInterface):
                 allow_regex=r'[0-9]',
                 input_height=1,
             )
+
+        self.inputs['primes_are_red'] = InputText(
+            label='primes_are_red',
+            content=str(d['primes_are_red']),
+            is_bool=True,
+            input_height=1,
+        )
 
         self.inputs['zero_padded'] = InputText(
             label='zero_padded',

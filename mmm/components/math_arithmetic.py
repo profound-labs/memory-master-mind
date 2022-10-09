@@ -6,9 +6,10 @@ import re
 import math
 from random import randint
 import json
-from typing import List
 
-from mmm.types import MathArithId, load_settings
+from rich.text import Text
+
+from mmm.types import MathArithId, is_prime, load_settings
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -45,29 +46,67 @@ class ShowNumbers(ShowChallengeInterface):
 
         self.items = a
 
-    def format_challenge(self) -> str:
+    def format_challenge_plain(self) -> str:
         text = " ".join(self.items)
         if not self.show_numbers:
             text = re.sub('.', '-', text)
 
         return text
 
-    def format_answers(self, for_display: bool) -> List[str]:
+    def format_challenge_rich(self) -> Text:
+        if self.show_numbers:
+            d = load_settings(self.view_id)
+            text = Text()
+            for idx, i in enumerate(self.items):
+                if idx != 0:
+                    text.append(" ")
+
+                if i.isdigit() and d['primes_are_red'] and is_prime(int(i)):
+                    text.append(i, style="red")
+                else:
+                    text.append(i)
+
+        else:
+            s = " ".join(self.items)
+            s = re.sub('.', '-', s)
+            text = Text(s)
+
+        return text
+
+    def format_answer_plain(self) -> str:
         d = load_settings(self.view_id)
         answer = self.generate_answer()
         answer = re.sub(r'\.0$', '', answer)
 
         if answer.find('.') != -1:
             digits = re.compile('(\\.[0-9]{1,' + str(d['solve_frac_dec']) + '}).*')
+            answer = re.sub(digits, '\\1', answer)
+
+        return answer
+
+    def format_answer_rich(self) -> Text:
+        d = load_settings(self.view_id)
+        answer = self.generate_answer()
+        answer = re.sub(r'\.0$', '', answer)
+
+        text = self.format_challenge_rich().append("\n= ")
+
+        if answer.find('.') != -1:
+            digits = re.compile('(\\.[0-9]{1,' + str(d['solve_frac_dec']) + '}).*')
             s = re.sub(digits, '\\1', answer)
-            if for_display and len(s) < len(answer):
+            if len(s) < len(answer):
                 s = "~" + s
-            answer = s
+            text.append(s)
 
-        if for_display:
-            answer = self.format_challenge() + "\n= " + answer
+        elif answer.find('-') != -1:
+            if answer.isdigit() and d['primes_are_red'] and is_prime(int(answer)):
+                text.append(answer, style="red")
+            else:
+                text.append(answer)
+        else:
+            text.append(answer)
 
-        return [answer]
+        return text
 
     def generate_answer(self) -> str:
         if len(self.items) > 0:
@@ -92,6 +131,11 @@ class PreferencesView(PreferencesInterface):
 
         d['operations'] = ops
 
+        if self.inputs['primes_are_red'].content == "True":
+            d['primes_are_red'] = True
+        else:
+            d['primes_are_red'] = False
+
         if self.inputs['negatives'].content == "True":
             d['negatives'] = True
         else:
@@ -107,6 +151,7 @@ class PreferencesView(PreferencesInterface):
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
         self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
+        self.labels['primes_are_red'] = FormLabel(label="Primes are red:")
         self.labels['operations'] = FormLabel(label="Operations (+ - / *):")
         self.labels['negatives'] = FormLabel(label="Negatives:")
         self.labels['solve_frac_dec'] = FormLabel(label="Solve fractions to decimals:")
@@ -118,6 +163,13 @@ class PreferencesView(PreferencesInterface):
                 allow_regex=r'[0-9]',
                 input_height=1,
             )
+
+        self.inputs['primes_are_red'] = InputText(
+            label='primes_are_red',
+            content=str(d['primes_are_red']),
+            is_bool=True,
+            input_height=1,
+        )
 
         self.inputs['operations'] = InputText(
             label='operations',

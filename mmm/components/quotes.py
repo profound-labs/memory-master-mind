@@ -10,6 +10,8 @@ import json
 import csv
 from typing import List, Optional, Tuple
 
+from rich.text import Text
+
 from mmm import PACKAGE_QUOTES_PATH
 from mmm.types import QuotesId, RE_PUNCT, load_settings
 import mmm.db as db
@@ -148,7 +150,7 @@ class ShowQuote(ShowChallengeInterface):
             w = re.sub(RE_PUNCT, '', words[i])
             self.hidden_words.append(w)
 
-    def format_challenge(self) -> str:
+    def format_challenge_plain(self) -> str:
         (body, author) = self.quote_to_body_and_author(self.items[0])
 
         words = self.quote_body_split(self.items[0])
@@ -169,19 +171,17 @@ class ShowQuote(ShowChallengeInterface):
 
         return quote
 
+    def format_challenge_rich(self) -> Text:
+        return Text(self.format_challenge_plain())
+
     def generate_answer(self) -> str:
         return " ".join(self.hidden_words)
 
-    def format_answers(self, for_display: bool) -> List[str]:
-        text = self.format_challenge()
-        if for_display:
-            return [text]
+    def format_answer_plain(self) -> str:
+        return self.generate_answer()
 
-        answer = self.generate_answer()
-
-        answers = [answer]
-
-        return answers
+    def format_answer_rich(self) -> Text:
+        return self.format_challenge_rich()
 
 
 class PreferencesView(PreferencesInterface):

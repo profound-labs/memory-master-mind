@@ -6,8 +6,11 @@ import re
 import math
 from random import randint
 import json
+from typing import List
 
-from mmm.types import StaticNumId, load_settings
+from rich.text import Text
+
+from mmm.types import StaticNumId, load_settings, is_prime
 import mmm.db as db
 from mmm.components.footer import Footer
 from mmm.components.form_label import FormLabel
@@ -19,7 +22,7 @@ from mmm.components.input_text import InputText
 class ShowNumbers(ShowChallengeInterface):
     def new_challenge(self, regenerate: bool = True):
         d = load_settings(self.view_id)
-        a = []
+        a: List[str] = []
         for _ in range(0, d['level']):
             range_from = int(math.pow(10, d['digits_min']- 1)) - 1
             range_to = int(math.pow(10, d['digits_max'])) - 1
@@ -31,10 +34,30 @@ class ShowNumbers(ShowChallengeInterface):
                 a.append(str(n))
         self.items = a
 
-    def format_challenge(self) -> str:
+    def format_challenge_plain(self) -> str:
         text = " ".join(self.items)
         if not self.show_numbers:
             text = re.sub('.', '-', text)
+
+        return text
+
+    def format_challenge_rich(self) -> Text:
+        if self.show_numbers:
+            d = load_settings(self.view_id)
+            text = Text()
+            for idx, i in enumerate(self.items):
+                if idx != 0:
+                    text.append(" ")
+
+                if i.isdigit() and d['primes_are_red'] and is_prime(int(i)):
+                    text.append(i, style="red")
+                else:
+                    text.append(i)
+
+        else:
+            s = " ".join(self.items)
+            s = re.sub('.', '-', s)
+            text = Text(s)
 
         return text
 
@@ -48,6 +71,11 @@ class PreferencesView(PreferencesInterface):
 
         for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
             d[k] = int(self.inputs[k].content)
+
+        if self.inputs['primes_are_red'].content == "True":
+            d['primes_are_red'] = True
+        else:
+            d['primes_are_red'] = False
 
         if self.inputs['zero_padded'].content == "True":
             d['zero_padded'] = True
@@ -64,6 +92,7 @@ class PreferencesView(PreferencesInterface):
         self.labels['level_max'] = FormLabel(label="Level max:")
         self.labels['ch_per_level'] = FormLabel(label="Challenges per level:")
         self.labels['seconds_per_level'] = FormLabel(label="Seconds per level:")
+        self.labels['primes_are_red'] = FormLabel(label="Primes are red:")
         self.labels['zero_padded'] = FormLabel(label="Zero padded:")
 
         for k in ['digits_min', 'digits_max', 'level_max', 'ch_per_level', 'seconds_per_level']:
@@ -73,6 +102,13 @@ class PreferencesView(PreferencesInterface):
                 allow_regex=r'[0-9]',
                 input_height=1,
             )
+
+        self.inputs['primes_are_red'] = InputText(
+            label='primes_are_red',
+            content=str(d['primes_are_red']),
+            is_bool=True,
+            input_height=1,
+        )
 
         self.inputs['zero_padded'] = InputText(
             label='zero_padded',

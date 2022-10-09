@@ -23,23 +23,27 @@ class ShowChallengeInterface(Widget):
     def new_challenge(self, regenerate: bool = True):
         raise NotImplementedError
 
-    def format_challenge(self) -> str:
+    def format_challenge_plain(self) -> str:
+        raise NotImplementedError
+
+    def format_challenge_rich(self) -> Text:
         raise NotImplementedError
 
     def generate_answer(self) -> str:
         raise NotImplementedError
 
-    def format_answers(self, for_display: bool) -> List[str]:
-        text = self.format_challenge()
+    def format_answer_plain(self) -> str:
+        return self.generate_answer()
+
+    def format_answer_rich(self) -> Text:
+        text = self.format_challenge_plain()
         answer = self.generate_answer()
         if text == answer:
-            return [answer]
-
-        if for_display:
-            a = text + "\n= " + answer
-            return [a]
+            return self.format_challenge_rich()
         else:
-            return [answer]
+            a = self.format_challenge_rich()
+            a.append("\n= " + answer)
+            return a
 
     def show_next_item(self):
         if self.current_item < len(self.items) - 1:
@@ -51,7 +55,7 @@ class ShowChallengeInterface(Widget):
 
     def render(self):
         if self.state in [State.SHOW_ANSWER, State.CORRECT]:
-            text = self.format_answers(True)[0]
+            text: Text = self.format_answer_rich()
         else:
-            text = self.format_challenge()
-        return Align.center(Text(text), vertical="middle")
+            text: Text = self.format_challenge_rich()
+        return Align.center(text, vertical="middle")

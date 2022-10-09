@@ -192,8 +192,9 @@ class ChallengeInterface(GridView):
             self.show_numbers.show_numbers = False
 
             if event.key == "enter" and self.menu_enabled():
-                answers = self.show_numbers.format_answers(False)
-                self.state = self.input_answer.check_answer(answers)
+                answer = self.show_numbers.format_answer_plain()
+                self.log(answer)
+                self.state = self.input_answer.check_answer(answer)
 
                 if self.state == State.CORRECT:
                     self.incr_level()

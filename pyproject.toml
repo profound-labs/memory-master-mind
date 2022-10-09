@@ -5,6 +5,8 @@ description = "MMM - Memory Master Mind - memory training in the terminal"
 authors = ["Gambhiro <profound.labs@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/profound-labs/memory-master-mind"
+repository = "https://github.com/profound-labs/memory-master-mind"
 
 [tool.poetry.dependencies]
 python = "^3.8"

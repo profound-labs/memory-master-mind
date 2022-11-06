@@ -26,3 +26,43 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 pythonVersion = "3.8"
 typeCheckingMode = "basic"
+
+[tool.briefcase]
+project_name = "Memory Master Mind"
+bundle = "io.github"
+# briefcase requires PEP440 version strings
+version = "1.0.0"
+url = "https://github.com/profound-labs/memory-master-mind"
+license = "MIT license"
+# Package will display this info
+author = 'Profound Labs'
+author_email = "profound.labs@gmail.com"
+
+[tool.briefcase.app.memory_master_mind]
+formal_name = "Memory Master Mind"
+description = "MMM - Memory Master Mind - memory training in the terminal"
+icon = "memory_master_mind/assets/icons/appicons/mmm"
+sources = ['memory_master_mind']
+
+requires = [
+"textual            >= 0.1.18,   < 0.2.0",
+"typer              >= 0.6.1,    < 0.7.0",
+"appdirs            >= 1.4.4,    < 1.5.0",
+"python-dotenv      >= 0.21.0,   < 0.22.0",
+]
+
+[tool.briefcase.app.memory_master_mind.macOS]
+requires = []
+
+[tool.briefcase.app.memory_master_mind.linux]
+requires = []
+
+[tool.briefcase.app.memory_master_mind.windows]
+requires = []
+
+# Mobile deployments
+[tool.briefcase.app.memory_master_mind.iOS]
+requires = []
+
+[tool.briefcase.app.memory_master_mind.android]
+requires = []
